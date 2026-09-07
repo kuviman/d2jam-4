@@ -1,5 +1,5 @@
 use (import "../common.ks").*;
-use (import "../la.ks").*;
+use (import "../la/_lib.ks").*;
 const gl = import "../gl/_lib.ks";
 const ugli = import "../ugli/_lib.ks";
 const SDL = import "../sdl3/_lib.ks";
@@ -105,6 +105,8 @@ const draw_quad = (
     .half_size :: Vec2,
     .texture :: ugli.Texture,
 ) => (
+    panic("TODO DRAW QUAD");
+    (#
     let ctx = (@current Context);
     let camera = (@current CameraCtx);
     let program = ctx.quad.program;
@@ -120,6 +122,7 @@ const draw_quad = (
     program |> ugli.set_uniform("u_texture", texture, draw_state);
     program |> ugli.set_vertex_data_source(ctx.quad.buffer);
     gl.draw_arrays(gl.TRIANGLE_FAN, 0, 4);
+    #)
 );
 
 const load_texture = (path :: String, filter :: ugli.Filter) -> ugli.Texture => (

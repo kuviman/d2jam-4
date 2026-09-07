@@ -1,5 +1,5 @@
 use (import "../common.ks").*;
-use (import "../la.ks").*;
+use (import "../la/_lib.ks").*;
 const gl = import "../gl/_lib.ks";
 const SDL = import "../sdl3/_lib.ks";
 
@@ -14,11 +14,12 @@ const init = () => (
         let error :: String = @native "String_from_C_String(glewGetErrorString(\(err)))";
         panic("glewInit failed: " + error);
     );
+    gl.enable(gl.DEPTH_TEST);
 );
 
 const clear = (color :: Vec4) => (
     gl.clear_color(...color);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(@native "GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT");
 );
 
 const SizedType = [Self :: Type] newtype {
@@ -332,6 +333,24 @@ impl Mat3 as Uniform = {
         add(row => row.1);
         add(row => row.2);
         @native "glUniformMatrix3fv(\(location), 1, \(false), \(list).buf)";
+    ),
+};
+
+impl Mat4 as Uniform = {
+    .set = (location, value, state) => (
+        let ctx = (@current gl.Context);
+        let mut list = ArrayList.new();
+        let add = (f) => (
+            &mut list |> ArrayList.push_back(f(value.0));
+            &mut list |> ArrayList.push_back(f(value.1));
+            &mut list |> ArrayList.push_back(f(value.2));
+            &mut list |> ArrayList.push_back(f(value.3));
+        );
+        add(row => row.0);
+        add(row => row.1);
+        add(row => row.2);
+        add(row => row.3);
+        @native "glUniformMatrix4fv(\(location), 1, \(false), \(list).buf)";
     ),
 };
 

@@ -1,4 +1,5 @@
 use (import "./lib/_lib.ks").*;
+use (import "./model.ks").*;
 
 module:
 
@@ -11,6 +12,7 @@ const Assets = (
         .font :: font.Font,
         .shaders :: Shaders,
         .textures :: Textures,
+        .models :: Models,
     };
 
     const Shaders = newtype {
@@ -27,6 +29,10 @@ const Assets = (
         .fullscreen :: ugli.Texture,
         .mute :: ugli.Texture,
         .muted :: ugli.Texture,
+    };
+
+    const Models = newtype {
+        .unicorn :: Model.t,
     };
 
     const load = () -> t => (
@@ -58,12 +64,17 @@ const Assets = (
             .muted = load_texture("muted.png"),
         };
 
+        let models = {
+            .unicorn = Model.load("assets/unicorn"),
+        };
+
         {
             # .music,
             .sfx,
             .font,
             .shaders,
             .textures,
+            .models,
         }
     );
 );

@@ -1,5 +1,5 @@
 use (import "./common.ks").*;
-use (import "./la.ks").*;
+use (import "./la/_lib.ks").*;
 const gl = import "./gl/_lib.ks";
 const ugli = import "./ugli/_lib.ks";
 const geng = import "./geng/_lib.ks";
@@ -193,6 +193,8 @@ impl Font as module = (
         .color :: Vec4,
         .align :: Float32,
     ) => (
+        panic("TODO DRAW FONT");
+        (#
         let ctx = (@current geng.Context);
         let camera = (@current geng.CameraCtx);
         let program = font^.program;
@@ -229,5 +231,6 @@ impl Font as module = (
 
             pos.0 += single_char_size.0;
         );
+        #)
     );
 );

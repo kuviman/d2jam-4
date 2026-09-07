@@ -1,5 +1,5 @@
 use (import "../common.ks").*;
-use (import "../la.ks").*;
+use (import "../la/_lib.ks").*;
 const SDL = import "../sdl3/_lib.ks";
 
 use std.collections.Queue;

@@ -1,5 +1,3 @@
-precision highp float;
-
 varying vec2 v_uv;
 
 uniform sampler2D u_texture;

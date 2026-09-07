@@ -1,67 +1,39 @@
-use (import "../la.ks").*;
+use (import "../la/_lib.ks").*;
 
 module:
 
 const Camera = newtype {
-    .pos :: Vec2,
-    .fov :: Float32,
+    .pos :: Vec3,
+    .distance :: Float32,
+    .rotation :: Angle,
+    .attack :: Angle,
+    .fov :: Angle,
 };
 
 const CameraUniforms = newtype {
-    .view_matrix :: Mat3,
-    .projection_matrix :: Mat3,
+    .view_matrix :: Mat4,
+    .projection_matrix :: Mat4,
 };
-
-const CameraCtx = @context CameraUniforms;
 
 impl CameraUniforms as module = (
     module:
+
+    const Ctx = @context CameraUniforms;
 
     const init = (
         camera :: Camera,
         .framebuffer_size :: Vec2,
     ) -> CameraUniforms => (
-        let view_matrix = {
-            { 1, 0, -camera.pos.0 },
-            { 0, 1, -camera.pos.1 },
-            { 0, 0, 1 },
-        };
+        let view_matrix = Mat4.translate({ 0, 0, -camera.distance })
+            |> Mat4.mul_mat(Mat4.rotate_x(Angle.neg(camera.attack)))
+            |> Mat4.mul_mat(Mat4.rotate_z(Angle.neg(camera.rotation)))
+            |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(-90)))
+            |> Mat4.mul_mat(Mat4.translate(Vec3.neg(camera.pos)));
         let aspect = framebuffer_size.0 / framebuffer_size.1;
-        let projection_matrix = {
-            { 2 / aspect / camera.fov, 0, 0 },
-            { 0, 2 / camera.fov, 0 },
-            { 0, 0, 1 },
-        };
+        let projection_matrix = Mat4.perspective(camera.fov, aspect, 0.1, 1000);
         {
             .view_matrix,
             .projection_matrix,
         }
-    );
-);
-
-impl Camera as module = (
-    module:
-
-    const screen_to_world = (
-        camera :: Camera,
-        screen_pos :: Vec2,
-        .framebuffer_size :: Vec2,
-    ) -> Vec2 => (
-        let uniforms = CameraUniforms.init(camera, .framebuffer_size);
-        let gl_screen_pos = Vec2.map(
-            Vec2.vdiv(screen_pos, framebuffer_size),
-            x => x * 2 - 1,
-        );
-        # projection_matrix * view_matrix * world_pos = gl_screen_pos
-        let world_pos = Mat3.mul_vec(
-            Mat3.inverse(
-                Mat3.mul_mat(
-                    uniforms.projection_matrix,
-                    uniforms.view_matrix,
-                )
-            ),
-            { gl_screen_pos.0, gl_screen_pos.1, 1 },
-        );
-        { world_pos.0, world_pos.1 }
     );
 );

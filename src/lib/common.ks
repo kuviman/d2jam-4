@@ -42,3 +42,27 @@ const max = (a :: Float32, b :: Float32) -> Float32 => (
 const clamp = (x :: Float32, .min :: Float32, .max :: Float32) -> Float32 => (
     if x < min then min else if x > max then max else x
 );
+
+const math = (
+    module:
+
+    const tan = (x :: Float32) -> Float32 => (
+        @native "#include <math.h>";
+        @native "tan(\(x))"
+    );
+
+    const sin = (x :: Float32) -> Float32 => (
+        @native "#include <math.h>";
+        @native "sin(\(x))"
+    );
+
+    const cos = (x :: Float32) -> Float32 => (
+        @native "#include <math.h>";
+        @native "cos(\(x))"
+    );
+
+    const sqrt = (x :: Float32) -> Float32 => (
+        @native "#include <math.h>";
+        @native "sqrt(\(x))"
+    );
+);
