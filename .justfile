@@ -11,10 +11,10 @@ build-native:
     ${CC:-gcc} \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \
-        -fsanitize=address,leak,undefined \
         -g -O1 \
         -o target/compiled/main.exe \
         target/compiled/main.c
+    # -fsanitize=address,leak,undefined \
     # -fno-omit-frame-pointer \
 
 build-emscripten source="target/compiled/main.c":

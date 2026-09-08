@@ -3,6 +3,8 @@ const Vec3 = newtype { Float32, Float32, Float32 };
 impl Vec3 as module = (
     module:
 
+    const xy = ({ x, y, _ } :: Vec3) -> Vec2 => { x, y };
+
     const add = (a :: Vec3, b :: Vec3) -> Vec3 => (
         { a.0 + b.0, a.1 + b.1, a.2 + b.2 }
     );

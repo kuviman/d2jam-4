@@ -4,6 +4,8 @@ use std.collections.OrdMap;
 
 const json = import "../../deps/json/lib.ks";
 
+const EPS :: Float32 = 0.0000001;
+
 const UInt32_to_Int32 = (x :: UInt32) -> Int32 => @native "\(x)";
 const Int32_to_UInt32 = (x :: Int32) -> UInt32 => @native "\(x)";
 const Int32_to_Float32 = (x :: Int32) -> Float32 => @native "\(x)";

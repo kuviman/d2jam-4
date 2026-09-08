@@ -36,6 +36,30 @@ impl Vec2 as module = (
         { v.0 * cos - v.1 * sin, v.0 * sin + v.1 * cos }
     );
 
+    const dot = (a :: Vec2, b :: Vec2) -> Float32 => (
+        a.0 * b.0 + a.1 * b.1
+    );
+
+    const length2 = (v :: Vec2) -> Float32 => (
+        dot(v, v)
+    );
+
+    const length = (v :: Vec2) -> Float32 => (
+        math.sqrt(length2(v))
+    );
+
+    const normalize_or_zero = (v :: Vec2) -> Vec2 => (
+        if abs(v.0) + abs(v.1) < EPS then (
+            v
+        ) else (
+            normalize(v)
+        )
+    );
+
+    const normalize = (v :: Vec2) -> Vec2 => (
+        div(v, length(v))
+    );
+
     const arg = (v :: Vec2) -> Angle => (
         { .radians = math.atan2(v.1, v.0) }
     );

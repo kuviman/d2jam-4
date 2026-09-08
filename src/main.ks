@@ -7,7 +7,9 @@ module:
 const Entity = newtype {
     .skin :: Int32,
     .position :: Vec3,
+    .velocity :: Vec3,
     .rotation :: Angle,
+    .can_jump :: Bool,
 };
 
 impl Entity as module = (
@@ -73,8 +75,10 @@ const Game = newtype {
                 .model_renderer = Model.Renderer.init(),
                 .player = {
                     .position = { 0, 0, 0 },
+                    .velocity = { 0, 0, 0 },
                     .rotation = Angle.from_degrees(150),
                     .skin = 0,
+                    .can_jump = false,
                 },
             }
         ),
@@ -104,10 +108,37 @@ const Game = newtype {
             if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
                 wasd.1 -= 1;
             );
+            if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
+                self^.player.velocity.2 += 20;
+            );
             let player_speed = 15;
+            let player_acceleration = 20;
+            let target_velocity = Vec2.rotate(
+                Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                self^.camera.rotation,
+            );
+            self^.player.velocity = Vec3.add(
+                self^.player.velocity,
+                {
+                    ...Vec2.mul(
+                        Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
+                        min(player_acceleration * delta_time, 1),
+                    ),
+                    0
+                },
+            );
+            let gravity = 50;
+            self^.player.velocity.2 -= gravity * delta_time;
             self^.player.position = Vec3.add(
                 self^.player.position,
-                Vec3.mul({ ...Vec2.rotate(wasd, self^.camera.rotation), 0 }, player_speed * delta_time)
+                Vec3.mul(self^.player.velocity, delta_time),
+            );
+            if self^.player.position.2 < 0 then (
+                self^.player.position.2 = 0;
+                self^.player.velocity.2 = 0;
+                self^.player.can_jump = true;
+            ) else (
+                self^.player.can_jump = false;
             );
             if wasd.0 != 0 or wasd.1 != 0 then (
                 self^.player.rotation = Angle.add(self^.camera.rotation, Vec2.arg(wasd));
