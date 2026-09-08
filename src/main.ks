@@ -104,7 +104,7 @@ const Game = newtype {
             if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
                 wasd.1 -= 1;
             );
-            let player_speed = 5;
+            let player_speed = 15;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul({ ...Vec2.rotate(wasd, self^.camera.rotation), 0 }, player_speed * delta_time)
@@ -137,4 +137,13 @@ const Game = newtype {
     }
 );
 
-geng.run[Game]();
+const cli = import "./cli.ks";
+
+let args = cli.parse();
+if args.server is :Some address then (
+    const server = import "./server.ks";
+    server.run(address);
+);
+if args.connect is :Some address then (
+    geng.run[Game]();
+);

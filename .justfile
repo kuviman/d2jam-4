@@ -47,11 +47,21 @@ build-emscripten source="target/compiled/main.c":
     # --shell-file shell.html \
     # -sMAX_WEBGL_VERSION=2 \
 
-run:
+build:
     just build-c
     just build-native
+
+run:
     LSAN_OPTIONS='suppresions=suppr.txt' \
-        ./target/compiled/main.exe
+        ./target/compiled/main.exe --server 127.0.0.1:1234 --connect 127.0.0.1:1234
+
+server:
+    LSAN_OPTIONS='suppresions=suppr.txt' \
+        ./target/compiled/main.exe --server 127.0.0.1:1234
+
+client:
+    LSAN_OPTIONS='suppresions=suppr.txt' \
+        ./target/compiled/main.exe --connect 127.0.0.1:1234
 
 serve:
     just build-c

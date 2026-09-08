@@ -76,7 +76,7 @@ const Assets = (
             .skins = (
                 let mut list = ArrayList.new();
                 &mut list |> ArrayList.push_back(Model.load("assets/models/unicorn"));
-                &mut list |> ArrayList.push_back(Model.load("assets/models/linksider"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/daivy"));
                 list
             ),
         };
