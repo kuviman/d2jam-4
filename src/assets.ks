@@ -32,7 +32,7 @@ const Assets = (
     };
 
     const Models = newtype {
-        .unicorn :: Model.t,
+        .skins :: ArrayList.t[Model.t],
     };
 
     const load = () -> t => (
@@ -65,7 +65,12 @@ const Assets = (
         };
 
         let models = {
-            .unicorn = Model.load("assets/unicorn"),
+            .skins = (
+                let mut list = ArrayList.new();
+                &mut list |> ArrayList.push_back(Model.load("assets/models/unicorn"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/linksider"));
+                list
+            ),
         };
 
         {
