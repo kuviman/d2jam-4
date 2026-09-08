@@ -25,15 +25,19 @@ impl Angle as module = (
         angle.radians * 180 / PI
     );
 
-    const tan = (angle :: Angle) => (
+    const tan = (angle :: Angle) -> Float32 => (
         math.tan(angle.radians)
     );
 
-    const sin = (angle :: Angle) => (
+    const sin = (angle :: Angle) -> Float32 => (
         math.sin(angle.radians)
     );
 
-    const cos = (angle :: Angle) => (
+    const cos = (angle :: Angle) -> Float32 => (
         math.cos(angle.radians)
+    );
+
+    const sin_cos = (angle :: Angle) -> { Float32, Float32 } => (
+        { sin(angle), cos(angle) }
     );
 );

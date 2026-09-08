@@ -1,5 +1,19 @@
 const Mat4 = newtype { Vec4, Vec4, Vec4, Vec4 };
 
+impl Mat4 as ToString = {
+    .to_string = m => (
+        "{ "
+        + to_string(m.0)
+        + ", "
+        + to_string(m.1)
+        + ", "
+        + to_string(m.2)
+        + ", "
+        + to_string(m.3)
+        + " }"
+    )
+};
+
 impl Mat4 as module = (
     module:
 
@@ -106,25 +120,24 @@ impl Mat4 as module = (
     );
 
     const rotate = (v :: Vec3, angle :: Angle) -> Mat4 => (
-        let cs = Angle.sin(angle);
-        let sn = Angle.cos(angle);
+        let { sin, cos } = Angle.sin_cos(angle);
         {
             {
-                v.0 * v.0 * (1 - cs) + cs,
-                v.0 * v.1 * (1 - cs) - v.2 * sn,
-                v.0 * v.2 * (1 - cs) + v.1 * sn,
+                v.0 * v.0 * (1 - cos) + cos,
+                v.0 * v.1 * (1 - cos) - v.2 * sin,
+                v.0 * v.2 * (1 - cos) + v.1 * sin,
                 0
             },
             {
-                v.1 * v.0 * (1 - cs) + v.2 * sn,
-                v.1 * v.1 * (1 - cs) + cs,
-                v.1 * v.2 * (1 - cs) - v.0 * sn,
+                v.1 * v.0 * (1 - cos) + v.2 * sin,
+                v.1 * v.1 * (1 - cos) + cos,
+                v.1 * v.2 * (1 - cos) - v.0 * sin,
                 0,
             },
             {
-                v.2 * v.0 * (1 - cs) - v.1 * sn,
-                v.2 * v.1 * (1 - cs) + v.0 * sn,
-                v.2 * v.2 * (1 - cs) + cs,
+                v.2 * v.0 * (1 - cos) - v.1 * sin,
+                v.2 * v.1 * (1 - cos) + v.0 * sin,
+                v.2 * v.2 * (1 - cos) + cos,
                 0,
             },
             { 0, 0, 0, 1 },

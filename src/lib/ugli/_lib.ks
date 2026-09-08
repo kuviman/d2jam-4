@@ -260,6 +260,10 @@ impl Texture as module = (
             UInt32_to_Int32(t |> Wrap.to_gl),
         );
     );
+
+    const set_wrap = (texture :: &mut Texture, wrap :: Wrap) => (
+        set_wrap_separate(texture, wrap, wrap);
+    );
 );
 
 const DrawState = newtype {

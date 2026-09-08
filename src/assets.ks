@@ -15,6 +15,8 @@ const Assets = (
         .models :: Models,
     };
 
+    const Ctx = @context t;
+
     const Shaders = newtype {
         .model :: ugli.Program,
     };
@@ -29,6 +31,7 @@ const Assets = (
         .fullscreen :: ugli.Texture,
         .mute :: ugli.Texture,
         .muted :: ugli.Texture,
+        .ground :: ugli.Texture,
     };
 
     const Models = newtype {
@@ -62,6 +65,11 @@ const Assets = (
             .fullscreen = load_texture("fullscreen.png"),
             .mute = load_texture("mute.png"),
             .muted = load_texture("muted.png"),
+            .ground = (
+                let mut texture = geng.load_texture("assets/textures/ground.png", :Nearest);
+                &mut texture |> ugli.Texture.set_wrap(:Repeat);
+                texture
+            ),
         };
 
         let models = {

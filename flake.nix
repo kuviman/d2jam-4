@@ -150,6 +150,7 @@
             valgrind
             emscripten
             libbacktrace
+            butler
           ];
           # Since I dont have cmake or whatever
           CLANGD_FLAGS = "--query-driver=${clang}/bin/clang*";

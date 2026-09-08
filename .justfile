@@ -57,3 +57,7 @@ serve:
     just build-c
     just build-emscripten
     caddy run
+
+publish:
+    butler push target/web kuviman/d2jam4:html5
+

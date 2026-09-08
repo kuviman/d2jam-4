@@ -19,6 +19,32 @@ const init = () -> ContextT => (
 );
 
 const Key = newtype (
+    | :A
+    | :B
+    | :C
+    | :D
+    | :E
+    | :F
+    | :G
+    | :H
+    | :I
+    | :J
+    | :K
+    | :L
+    | :M
+    | :N
+    | :O
+    | :P
+    | :Q
+    | :R
+    | :S
+    | :T
+    | :U
+    | :V
+    | :W
+    | :X
+    | :Y
+    | :Z
     | :ArrowLeft
     | :ArrowRight
     | :ArrowUp
@@ -29,9 +55,42 @@ const Key = newtype (
 impl Key as module = (
     module:
 
+    const scancode = (key :: Key) -> SDL.Scancode => match key with (
+        | :A => @native "SDL_SCANCODE_A"
+        | :B => @native "SDL_SCANCODE_B"
+        | :C => @native "SDL_SCANCODE_C"
+        | :D => @native "SDL_SCANCODE_D"
+        | :E => @native "SDL_SCANCODE_E"
+        | :F => @native "SDL_SCANCODE_F"
+        | :G => @native "SDL_SCANCODE_G"
+        | :H => @native "SDL_SCANCODE_H"
+        | :I => @native "SDL_SCANCODE_I"
+        | :J => @native "SDL_SCANCODE_J"
+        | :K => @native "SDL_SCANCODE_K"
+        | :L => @native "SDL_SCANCODE_L"
+        | :M => @native "SDL_SCANCODE_M"
+        | :N => @native "SDL_SCANCODE_N"
+        | :O => @native "SDL_SCANCODE_O"
+        | :P => @native "SDL_SCANCODE_P"
+        | :Q => @native "SDL_SCANCODE_Q"
+        | :R => @native "SDL_SCANCODE_R"
+        | :S => @native "SDL_SCANCODE_S"
+        | :T => @native "SDL_SCANCODE_T"
+        | :U => @native "SDL_SCANCODE_U"
+        | :V => @native "SDL_SCANCODE_V"
+        | :W => @native "SDL_SCANCODE_W"
+        | :X => @native "SDL_SCANCODE_X"
+        | :Y => @native "SDL_SCANCODE_Y"
+        | :Z => @native "SDL_SCANCODE_Z"
+        | :ArrowLeft => @native "SDL_SCANCODE_LEFT"
+        | :ArrowRight => @native "SDL_SCANCODE_RIGHT"
+        | :ArrowUp => @native "SDL_SCANCODE_UP"
+        | :ArrowDown => @native "SDL_SCANCODE_DOWN"
+        | :Space => @native "SDL_SCANCODE_SPACE"
+    );
+
     const is_pressed = (key :: Key) -> Bool => (
-        # TODO
-        false
+        @native "SDL_GetKeyboardState(NULL)[\(scancode(key))]"
     );
 );
 
@@ -71,6 +130,10 @@ impl MouseButton as module = (
 );
 
 const Event = newtype (
+    | :MouseMove {
+        .position :: Vec2,
+        .delta :: Vec2,
+    }
     | :MousePress { .button :: MouseButton }
     | :PointerPress { .pos :: Vec2 }
     | :Quit
@@ -94,6 +157,18 @@ const convert = (event :: SDL.Event) -> Option.t[Event] => with_return (
         :Some :MousePress { .button }
     ) else if @native "\(event).type == SDL_EVENT_QUIT" then (
         :Some :Quit
+    ) else if @native "\(event).type == SDL_EVENT_MOUSE_MOTION" then (
+        let window_size = geng.get_window_size();
+        :Some :MouseMove {
+            .position = {
+                @native "\(event).motion.x",
+                window_size.1 - 1 - (@native "\(event).motion.y"),
+            },
+            .delta = {
+                @native "\(event).motion.xrel",
+                @native "-\(event).motion.yrel",
+            },
+        }
     ) else (
         :None
     )

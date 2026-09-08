@@ -1,5 +1,19 @@
 const Vec4 = newtype { Float32, Float32, Float32, Float32 };
 
+impl Vec4 as ToString = {
+    .to_string = m => (
+        "{ "
+        + to_string(m.0)
+        + ", "
+        + to_string(m.1)
+        + ", "
+        + to_string(m.2)
+        + ", "
+        + to_string(m.3)
+        + " }"
+    )
+};
+
 impl Vec4 as module = (
     module:
 

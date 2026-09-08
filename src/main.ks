@@ -6,88 +6,134 @@ module:
 
 const Entity = newtype {
     .skin :: Int32,
-    .pos :: Vec3,
+    .position :: Vec3,
     .rotation :: Angle,
-    .rotation_axis :: Vec3,
 };
+
+impl Entity as module = (
+    module:
+
+    const draw = (entity :: &Entity) => (
+        let assets = @current Assets.Ctx;
+        Model.draw(
+            assets.models.skins.[entity^.skin],
+            Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
+                |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
+        );
+    );
+);
 
 const Game = newtype {
     .camera :: geng.Camera,
     .assets :: Assets.t,
     .model_renderer :: Model.Renderer,
-    .entities :: ArrayList.t[Entity],
+    .ground :: Model.t,
+    .player :: Entity,
 };
 
 @eval (
     impl Game as geng.App = {
         .init = () => (
+            SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
             let assets = Assets.load();
-            let mut entities = ArrayList.new();
-            for x in -2..3 do (
-                for y in -2..3 do (
-                    for z in -2..3 do (
-                        let x = Int32_to_Float32(x);
-                        let y = Int32_to_Float32(y);
-                        let z = Int32_to_Float32(z);
-                        let entity = {
-                            .skin = std.random.gen_range(
-                                .min = 0,
-                                .max = ArrayList.length(&assets.models.skins),
-                            ),
-                            .pos = { x, y, z },
-                            .rotation = Angle.from_degrees(0),
-                            .rotation_axis = Vec3.normalize(
-                                {
-                                    std.random.gen_range(.min = -5, .max = +5),
-                                    std.random.gen_range(.min = -5, .max = +5),
-                                    5,
-                                }
-                            ),
-                        };
-                        &mut entities |> ArrayList.push_back(entity);
-                    );
+            let ground = (
+                let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 100);
+                let mut vs = ArrayList.new();
+                for (_ :: Int32) in 0..4 do (
+                    &mut vs |> ArrayList.push_back(v);
+                    v = { -v.1, v.0 };
                 );
+                let vertex = i => {
+                    .a_pos = { ...vs.[i], 0 },
+                    .a_uv = vs.[i],
+                    .a_normal = { 0, 0, 1 },
+                };
+                let mut data = ArrayList.new();
+                &mut data |> ArrayList.push_back(vertex(0));
+                &mut data |> ArrayList.push_back(vertex(1));
+                &mut data |> ArrayList.push_back(vertex(2));
+                &mut data |> ArrayList.push_back(vertex(0));
+                &mut data |> ArrayList.push_back(vertex(2));
+                &mut data |> ArrayList.push_back(vertex(3));
+                {
+                    .texture = assets.textures.ground,
+                    .buffer = ugli.VertexBuffer.init(&data),
+                }
             );
             {
                 .camera = {
-                    .pos = { 0, 0, 0 },
+                    .position = { 0, 0, 0 },
                     .distance = 5,
-                    .attack = Angle.from_degrees(20),
+                    .attack = Angle.from_degrees(30),
                     .rotation = Angle.from_degrees(0),
                     .fov = Angle.from_degrees(90),
                 },
                 .assets,
+                .ground,
                 .model_renderer = Model.Renderer.init(),
-                .entities,
+                .player = {
+                    .position = { 0, 0, 0 },
+                    .rotation = Angle.from_degrees(150),
+                    .skin = 0,
+                },
             }
         ),
         .draw = self => (
+            with Assets.Ctx = self^.assets;
             with Model.Renderer.Ctx = self^.model_renderer;
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
                 self^.camera,
                 .framebuffer_size = geng.get_window_size(),
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
-            for entity in &self^.entities |> ArrayList.iter do (
-                Model.draw(
-                    self^.assets.models.skins.[entity^.skin],
-                    Mat4.translate(entity^.pos)
-                        |> Mat4.mul_mat(Mat4.rotate(entity^.rotation_axis, entity^.rotation))
-                );
-            );
+            Model.draw(self^.ground, Mat4.IDENTITY);
+            Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
+            Entity.draw(&self^.player);
         ),
         .update = (self, delta_time) => (
-            self^.camera.rotation = Angle.from_degrees(
-                Angle.degrees(self^.camera.rotation) + delta_time * 30
+            let mut wasd :: Vec2 = { 0, 0 };
+            if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
+                wasd.0 += 1;
             );
-            for entity in &mut self^.entities |> ArrayList.iter_mut do (
-                entity^.rotation = Angle.add(
-                    entity^.rotation,
-                    Angle.from_degrees(30 * delta_time),
-                );
+            if geng.input.Key.is_pressed(:A) or geng.input.Key.is_pressed(:ArrowLeft) then (
+                wasd.1 += 1;
+            );
+            if geng.input.Key.is_pressed(:S) or geng.input.Key.is_pressed(:ArrowDown) then (
+                wasd.0 -= 1;
+            );
+            if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
+                wasd.1 -= 1;
+            );
+            let player_speed = 5;
+            self^.player.position = Vec3.add(
+                self^.player.position,
+                Vec3.mul({ ...Vec2.rotate(wasd, self^.camera.rotation), 0 }, player_speed * delta_time)
+            );
+            if wasd.0 != 0 or wasd.1 != 0 then (
+                self^.player.rotation = Angle.add(self^.camera.rotation, Vec2.arg(wasd));
+            );
+            self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
+        ),
+        .handle_event = (self, event) => (
+            match event with (
+                | :MouseMove { .delta, ... } => (
+                    let degree_per_pixel :: Float32 = 360 / 2000;
+                    self^.camera.rotation = Angle.sub(
+                        self^.camera.rotation,
+                        Angle.from_degrees(delta.0 * degree_per_pixel),
+                    );
+                    self^.camera.attack = Angle.from_degrees(
+                        clamp(
+                            Angle.degrees(self^.camera.attack)
+                            - delta.1 * degree_per_pixel,
+                            .min = 0,
+                            .max = 90,
+                        )
+                    );
+                )
+                | _ => ()
             );
         ),
-        .handle_event = (self, event) => (),
     }
 );
 

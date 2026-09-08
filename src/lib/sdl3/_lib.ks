@@ -110,6 +110,8 @@ const GL = (
     );
 );
 
+const Scancode = @opaque_type "SDL_Scancode";
+
 const Event = @opaque_type "SDL_Event";
 const PollEvent = () -> Option.t[Event] => (
     let event = @native "(SDL_Event){}";
@@ -118,6 +120,12 @@ const PollEvent = () -> Option.t[Event] => (
     ) else (
         :None
     )
+);
+
+const SetWindowRelativeMouseMode = (window :: Window, enabled :: Bool) => (
+    if @native "!SDL_SetWindowRelativeMouseMode(\(window), \(enabled))" then (
+        throw_error("SDL_SetWindowRelativeMouseMode");
+    );
 );
 
 const GetWindowSize = (window :: Window) -> { Int32, Int32 } => (
