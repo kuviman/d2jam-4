@@ -121,45 +121,107 @@
               cp -r dest/usr/local $out
             '';
           };
+        sdl3-win = with pkgs.pkgsCross.mingwW64;
+          sdl3.overrideAttrs
+            (prev: {
+              cmakeFlags = prev.cmakeFlags ++ [
+                (lib.cmakeBool "SDL_STATIC" true)
+                (lib.cmakeBool "SDL_SHARED" false)
+              ];
+            });
       in
       with pkgs; {
         packages = {
           inherit boehmgc-web;
+          inherit sdl3-win;
         };
-        devShells.default = mkShell {
-          packages = [
-            (pkgs.writeShellScriptBin "kastc" ''
-              systemd-run --user --scope -p MemoryMax=10G \
-                rlwrap ${kast}/bin/kast "$@"
-            '')
-            kast-selfhost
-            rlwrap
-            nixfmt
-            nodejs
-            just
-            caddy
-            inotify-tools
-            sdl3
-            sdl3-image
-            sdl3-mixer
-            boehmgc
-            boehmgc-web
+        devShells.win = with pkgs.pkgsCross.mingwW64; mkShell {
+          nativeBuildInputs = [
             libGL
-            glew
-            clang
-            valgrind
-            emscripten
-            libbacktrace
-            butler
+            gcc
+            pkgs.just
           ];
-          # Since I dont have cmake or whatever
-          CLANGD_FLAGS = "--query-driver=${clang}/bin/clang*";
-          KAST_PATH = "./kast_path";
-          BOEHMGC_WEB = "${boehmgc-web}";
-          SDL3_WEB = "${sdl3-web}";
-          SDL3_IMAGE_WEB = "${sdl3-image-web}";
-          SDL3_MIXER_WEB = "${sdl3-mixer-web}";
+          buildInputs = [
+            (glew.overrideAttrs {
+              meta.platforms = [ "x86_64-windows" ];
+              buildInputs = [ ];
+              propagatedBuildInputs = [ ];
+            })
+            windows.pthreads
+            libbacktrace
+            sdl3-win
+            (sdl3-image.overrideAttrs
+              (prev: {
+                cmakeFlags = [
+                  # fail when a dependency could not be found
+                  (lib.cmakeBool "SDLIMAGE_STRICT" true)
+                  # disable shared dependencies as they're opened at runtime using SDL_LoadObject otherwise.
+                  (lib.cmakeBool "SDLIMAGE_DEPS_SHARED" false)
+                  # enable stb conditionally
+                  (lib.cmakeBool "SDLIMAGE_BACKEND_STB" false)
+                  # enable imageio backend
+                  (lib.cmakeBool "SDLIMAGE_BACKEND_IMAGEIO" false)
+                  # enable tests
+                  (lib.cmakeBool "SDLIMAGE_TESTS" false)
+                  # enable jxl
+                  (lib.cmakeBool "SDLIMAGE_JXL" false)
+                  (lib.cmakeBool "SDLIMAGE_JPG" false)
+                  (lib.cmakeBool "SDLIMAGE_TIF" false)
+                  (lib.cmakeBool "SDLIMAGE_WEBP" false)
+                  # disable avif on darwin (see https://github.com/NixOS/nixpkgs/issues/400910)
+                  (lib.cmakeBool "SDLIMAGE_AVIF" false)
+                ];
+                buildInputs = [ sdl3 libpng ];
+              }))
+            (sdl3-mixer.overrideAttrs {
+              meta.platforms = [ "x86_64-windows" ];
+              buildInputs = [ sdl3 libogg ];
+              propagatedBuildInputs = [ ];
+              postPatch = null;
+              cmakeFlags = [
+                "-DBUILD_SHARED_LIBS=OFF"
+                "-DSDLMIXER_OPUS=OFF"
+              ];
+            })
+            boehmgc
+          ];
         };
+        devShells.default =
+          mkShell
+            {
+              packages = [
+                (pkgs.writeShellScriptBin "kastc" ''
+                  systemd-run --user --scope -p MemoryMax=10G \
+                    rlwrap ${kast}/bin/kast "$@"
+                '')
+                kast-selfhost
+                rlwrap
+                nixfmt
+                nodejs
+                just
+                caddy
+                inotify-tools
+                sdl3
+                sdl3-image
+                sdl3-mixer
+                boehmgc
+                boehmgc-web
+                libGL
+                glew
+                clang
+                valgrind
+                emscripten
+                libbacktrace
+                butler
+              ];
+              # Since I dont have cmake or whatever
+              CLANGD_FLAGS = "--query-driver=${clang}/bin/clang*";
+              KAST_PATH = "./kast_path";
+              BOEHMGC_WEB = "${boehmgc-web}";
+              SDL3_WEB = "${sdl3-web}";
+              SDL3_IMAGE_WEB = "${sdl3-image-web}";
+              SDL3_MIXER_WEB = "${sdl3-mixer-web}";
+            };
       });
 }
 
