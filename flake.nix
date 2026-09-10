@@ -171,11 +171,11 @@
                   # disable avif on darwin (see https://github.com/NixOS/nixpkgs/issues/400910)
                   (lib.cmakeBool "SDLIMAGE_AVIF" false)
                 ];
-                buildInputs = [ sdl3 libpng ];
+                buildInputs = [ sdl3-win libpng ];
               }))
             (sdl3-mixer.overrideAttrs {
               meta.platforms = [ "x86_64-windows" ];
-              buildInputs = [ sdl3 libogg ];
+              buildInputs = [ sdl3-win libogg ];
               propagatedBuildInputs = [ ];
               postPatch = null;
               cmakeFlags = [
@@ -213,6 +213,7 @@
                 emscripten
                 libbacktrace
                 butler
+                python314Packages.websockify
               ];
               # Since I dont have cmake or whatever
               CLANGD_FLAGS = "--query-driver=${clang}/bin/clang*";

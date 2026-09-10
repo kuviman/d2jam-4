@@ -2,6 +2,8 @@ use (import "lib/_lib.ks").*;
 use (import "./assets.ks").*;
 use (import "./model.ks").*;
 
+const client = import "./client.ks";
+
 module:
 
 const Entity = newtype {
@@ -33,9 +35,20 @@ const Game = newtype {
     .player :: Entity,
 };
 
+const handle_mmo = (self :: &mut Game) => (
+    while client.poll_message() is :Some msg do (
+        match msg with (
+            | :RequestUpdate => (
+                client.send(:Update { .pos = self^.player.position });
+            )
+        )
+    );
+);
+
 @eval (
     impl Game as geng.App = {
         .init = () => (
+            print("YO! " + (@current client.Ctx).name);
             SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
             let assets = Assets.load();
             let ground = (
@@ -95,6 +108,7 @@ const Game = newtype {
             Entity.draw(&self^.player);
         ),
         .update = (self, delta_time) => (
+            handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
                 wasd.0 += 1;
@@ -173,8 +187,20 @@ const cli = import "./cli.ks";
 let args = cli.parse();
 if args.server is :Some address then (
     const server = import "./server.ks";
-    server.run(address);
+    let run = () => server.run(address);
+    match args.connect with (
+        | :None => (
+            run();
+        )
+        | :Some _ => (
+            std.thread.spawn(run);
+        )
+    );
 );
 if args.connect is :Some address then (
+    let c = client.connect(address);
+    print("HUH? " + c.name);
+    with client.Ctx = c;
+    print("YO? " + (@current client.Ctx).name);
     geng.run[Game]();
 );

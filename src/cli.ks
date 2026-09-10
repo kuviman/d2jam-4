@@ -1,3 +1,5 @@
+use (import "./lib/_lib.ks").*;
+
 module:
 
 const Args = newtype {
@@ -5,11 +7,17 @@ const Args = newtype {
     .connect :: Option.t[String],
 };
 
-const parse = () -> Args => (
+const default_address = "127.0.0.1:1234";
+
+const parse = () -> Args => with_return (
     let mut result :: Args = {
         .server = :None,
         .connect = :None,
     };
+    if is_emscripten() then (
+        result.connect = :Some default_address;
+        return result;
+    );
     let mut i = 1;
     while i < std.sys.argc() do (
         let arg = std.sys.argv_at(i);
@@ -28,7 +36,7 @@ const parse = () -> Args => (
         panic("Unexpected arg " + arg);
     );
     if { result.server, result.connect } is { :None, :None } then (
-        result.connect = :Some "TODO setup default server";
+        result.connect = :Some default_address;
     );
     result
 );

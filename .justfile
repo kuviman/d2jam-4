@@ -18,7 +18,7 @@ build-native:
         -fsanitize=address,leak,undefined \
     # -fno-omit-frame-pointer \
 
-build-windows-do:
+build-windows-do source:
     $CC \
         -lkernel32 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lversion -luuid -ladvapi32 -lsetupapi -lshell32 -lhid -lmincore \
         -mwindows \
@@ -26,12 +26,10 @@ build-windows-do:
         -Wfatal-errors \
         -g -O1 \
         -o target/compiled/main.exe \
-        target/compiled/main.c
-    # -fno-omit-frame-pointer \
-    # -pthread \
+        {{source}}
 
-build-windows:
-    nix develop .#win --command just build-windows-do
+build-windows source="target/compiled/main.c":
+    nix develop .#win --command just build-windows-do {{source}}
 
 build-emscripten source="target/compiled/main.c":
     rm -rf target/web
