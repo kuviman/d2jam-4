@@ -153,7 +153,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => (
-            handle_mmo(self);
+            # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
                 wasd.0 += 1;
@@ -230,6 +230,7 @@ const handle_mmo = (self :: &mut Game) => (
 const cli = import "./cli.ks";
 
 let args = cli.parse();
+@comment_out (
 if args.server is :Some address then (
     const server = import "./server.ks";
     let run = () => server.run(address);
@@ -242,8 +243,9 @@ if args.server is :Some address then (
         )
     );
 );
+);
 if args.connect is :Some address then (
-    let c = client.connect(address);
-    with client.Ctx = c;
+    # let c = client.connect(address);
+    # with client.Ctx = c;
     geng.run[Game]();
 );

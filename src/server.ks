@@ -30,6 +30,7 @@ const read_line = (stream :: &mut tcp.Stream) -> String => (
             .length = \(length),
         }
     '';
+    @native "GC_MALLOC(1000)";
     # @native "GC_gcollect()";
     line
 );
