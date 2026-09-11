@@ -130,7 +130,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .ground,
                 .model_renderer = Model.Renderer.init(),
                 .player = {
-                    .position = { 0, 0, 0 },
+                    .position = { 0, 0, 10 },
                     .velocity = { 0, 0, 0 },
                     .rotation = Quat.IDENTITY,
                     .skin = 0,
@@ -148,7 +148,6 @@ const handle_mmo = (self :: &mut Game) => (
                 .framebuffer_size = geng.get_window_size(),
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
-            Model.draw(self^.ground, Mat4.IDENTITY);
             Model.draw(self^.assets.models.level.model, Mat4.IDENTITY);
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
@@ -157,6 +156,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => (
+            let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (

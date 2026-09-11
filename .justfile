@@ -55,6 +55,7 @@ build-emscripten source="target/compiled/main.c":
         --preload-file assets \
         -s TOTAL_STACK=64MB \
         -s INITIAL_MEMORY=128MB \
+        -s ALLOW_MEMORY_GROWTH \
         -s ASSERTIONS \
         -s ASYNCIFY \
         -w
