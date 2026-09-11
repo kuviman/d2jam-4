@@ -4,6 +4,7 @@ use (import "./model.ks").*;
 
 const interop = import "./interop.ks";
 const client = import "./client.ks";
+const collisions = import "./collisions.ks";
 
 module:
 
@@ -22,7 +23,7 @@ impl Entity as module = (
         let assets = @current Assets.Ctx;
         Model.draw(
             assets.models.skins.[entity^.skin],
-            Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
+            Mat4.translate(entity^.position)
                 |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
         );
     );
@@ -118,7 +119,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
             {
                 .camera = {
-                    .position = { 0, 0, 0 },
+                    .position = { 0, 0, 5 },
                     .distance = 5,
                     .attack = Angle.from_degrees(30),
                     .rotation = Angle.from_degrees(0),
@@ -146,6 +147,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
             Model.draw(self^.ground, Mat4.IDENTITY);
+            Model.draw(self^.assets.models.level.model, Mat4.IDENTITY);
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
@@ -192,12 +194,11 @@ const handle_mmo = (self :: &mut Game) => (
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
             );
-            if self^.player.position.2 < 0 then (
-                self^.player.position.2 = 0;
-                self^.player.velocity.2 = 0;
-                self^.player.can_jump = true;
-            ) else (
-                self^.player.can_jump = false;
+            self^.player.can_jump = collisions.collide_and_react(
+                .position = &mut self^.player.position,
+                .velocity = &mut self^.player.velocity,
+                .radius = 1,
+                .mesh = &self^.assets.models.level.collision_mesh,
             );
             if wasd.0 != 0 or wasd.1 != 0 then (
                 self^.player.rotation = Angle.add(self^.camera.rotation, Vec2.arg(wasd));
