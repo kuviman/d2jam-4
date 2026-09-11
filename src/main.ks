@@ -13,6 +13,7 @@ const Entity = newtype {
     .position :: Vec3,
     .velocity :: Vec3,
     .rotation :: Quat,
+    .angular_velocity :: Vec3,
     .can_jump :: Bool,
 };
 
@@ -133,6 +134,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .position = { 0, 0, 10 },
                     .velocity = { 0, 0, 0 },
                     .rotation = Quat.IDENTITY,
+                    .angular_velocity = { 0, 0, 0 },
                     .skin = 0,
                     .can_jump = false,
                 },
@@ -201,23 +203,37 @@ const handle_mmo = (self :: &mut Game) => (
                 if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
                     self^.player.velocity.2 += 20;
                 );
-                let target_velocity = Vec2.rotate(
-                    Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
-                    self^.camera.rotation,
-                );
-                self^.player.velocity = Vec3.add(
-                    self^.player.velocity,
-                    {
-                        ...Vec2.mul(
-                            Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
-                            min(player_acceleration * delta_time, 1),
-                        ),
-                        0
-                    },
-                );
                 let gravity = 50;
                 self^.player.velocity.2 -= gravity * delta_time;
             );
+
+            let max_angular_velocity = 10;
+            let target_angular_velocity = Vec3.mul(
+                { ...Vec2.rotate_90(Vec2.rotate(wasd, self^.camera.rotation)), 0 },
+                max_angular_velocity,
+            );
+            let angular_acceleration = 10;
+            self^.player.angular_velocity = Vec3.add(
+                self^.player.angular_velocity,
+                Vec3.mul(
+                    Vec3.sub(target_angular_velocity, self^.player.angular_velocity),
+                    min(angular_acceleration * delta_time, 1),
+                ),
+            );
+            self^.player.rotation = Quat.add(
+                self^.player.rotation,
+                Quat.mul(
+                    Quat.mul_quat(
+                        (
+                            let { i, j, k } = self^.player.angular_velocity;
+                            { .i, .j, .k, .w = 0 }
+                        ),
+                        self^.player.rotation,
+                    ),
+                    delta_time / 2,
+                )
+            )
+                |> Quat.normalize;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
@@ -225,20 +241,10 @@ const handle_mmo = (self :: &mut Game) => (
             self^.player.can_jump = collisions.collide_and_react(
                 .position = &mut self^.player.position,
                 .velocity = &mut self^.player.velocity,
+                .angular_velocity = &mut self^.player.angular_velocity,
                 .radius = 1,
                 .mesh = &self^.assets.models.level.collision_mesh,
             );
-            self^.player.rotation = Quat.mul_quat(
-                Quat.from_axis_angle(
-                    {
-                        ...Vec2.rotate_90(Vec3.xy(self^.player.velocity)),
-                        0,
-                    },
-                    Angle.from_degrees(360 * delta_time / player_speed),
-                ),
-                self^.player.rotation,
-            )
-                |> Quat.normalize;
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (

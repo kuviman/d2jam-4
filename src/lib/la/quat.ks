@@ -57,6 +57,13 @@ impl Quat as module = (
         .w = a.w + b.w,
     };
 
+    const sub = (a :: Quat, b :: Quat) -> Quat => {
+        .i = a.i - b.i,
+        .j = a.j - b.j,
+        .k = a.k - b.k,
+        .w = a.w - b.w,
+    };
+
     const into_mat4 = ({ .i, .j, .k, .w } :: Quat) -> Mat4 => (
         let ww = w * w;
         let ii = i * i;

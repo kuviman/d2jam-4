@@ -1,4 +1,5 @@
 use (import "./lib/la/_lib.ks").*;
+use (import "./lib/common.ks").*;
 
 module:
 
@@ -92,10 +93,11 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
 const collide_and_react = (
     .position :: &mut Vec3,
     .velocity :: &mut Vec3,
+    .angular_velocity :: &mut Vec3,
     .radius :: Float32,
     .mesh :: &Mesh,
 ) -> Bool => (
-    let bounciness = 0.5;
+    let bounciness = 0.1;
     if collide({ .position = position^, .radius }, mesh) is :Some collision then (
         position^ = Vec3.add(
             position^,
@@ -108,6 +110,20 @@ const collide_and_react = (
                 Vec3.mul(collision.normal, -(1 + bounciness) * velocity_along_normal),
             );
         );
+        let relative_angular_velocity = Vec3.add(
+            angular_velocity^,
+            Vec3.cross(velocity^, collision.normal),
+        );
+        let friction = 0.5;
+        let angular_impulse = Vec3.mul(
+            relative_angular_velocity,
+            -min(1, max(0, -velocity_along_normal) * friction),
+        );
+        velocity^ = Vec3.sub(
+            velocity^,
+            Vec3.cross(angular_impulse, collision.normal),
+        );
+        angular_velocity^ = Vec3.add(angular_velocity^, angular_impulse);
         true
     ) else (
         false
