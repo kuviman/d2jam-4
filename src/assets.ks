@@ -45,7 +45,7 @@ const Assets = (
         module:
 
         const load = (path :: String) -> LevelModel => (
-            let mut collision_mesh = { .faces = ArrayList.new() };
+            let mut collision_mesh = ArrayList.new();
             let obj = obj.parse(std.fs.read_file(path + "/model.obj"));
             for face in obj |> ArrayList.into_iter do (
                 let mut mesh_face = {
@@ -60,10 +60,10 @@ const Assets = (
                 &mut mesh_face.vs |> ArrayList.push_back(face.0.a_pos);
                 &mut mesh_face.vs |> ArrayList.push_back(face.1.a_pos);
                 &mut mesh_face.vs |> ArrayList.push_back(face.2.a_pos);
-                &mut collision_mesh.faces |> ArrayList.push_back(mesh_face);
+                &mut collision_mesh |> ArrayList.push_back(mesh_face);
             );
             {
-                .collision_mesh,
+                .collision_mesh = collisions.Mesh.new(collision_mesh),
                 .model = Model.load(path),
             }
         );

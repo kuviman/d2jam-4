@@ -24,7 +24,10 @@ const Mesh = newtype {
 
 impl Mesh as module = (
     module:
-    ()
+
+    const new = (faces :: ArrayList.t[Face]) -> Mesh => (
+        { .faces }
+    );
 );
 
 const update = (result :: &mut Collision, collision :: Collision) => (
