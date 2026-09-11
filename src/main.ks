@@ -55,6 +55,7 @@ const Game = newtype {
     .ground :: Model.t,
     .player :: Entity,
     .other_players :: OrdMap.t[interop.Id, OtherPlayer],
+    .jetpack_enabled :: Bool,
 };
 
 const handle_mmo = (self :: &mut Game) => (
@@ -136,6 +137,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .can_jump = false,
                 },
                 .other_players = OrdMap.new(),
+                .jetpack_enabled = false,
             }
         ),
         .draw = self => (
@@ -169,27 +171,53 @@ const handle_mmo = (self :: &mut Game) => (
             if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
                 wasd.1 -= 1;
             );
-            if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
-                self^.player.velocity.2 += 20;
-            );
             let player_speed = 15;
             let player_acceleration = 20;
-            let target_velocity = Vec2.rotate(
-                Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
-                self^.camera.rotation,
-            );
-            self^.player.velocity = Vec3.add(
-                self^.player.velocity,
-                {
-                    ...Vec2.mul(
-                        Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
+            if self^.jetpack_enabled then (
+                let target_velocity :: Vec3 = {
+                    ...Vec2.rotate(
+                        Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                        self^.camera.rotation,
+                    ),
+                    (
+                        let mut z = 0;
+                        if geng.input.Key.is_pressed(:Space) then (
+                            z += 1;
+                        );
+                        if geng.input.Key.is_pressed(:LeftShift) then (
+                            z -= 1;
+                        );
+                        z * player_speed
+                    ),
+                };
+                self^.player.velocity = Vec3.add(
+                    self^.player.velocity,
+                    Vec3.mul(
+                        Vec3.sub(target_velocity, self^.player.velocity),
                         min(player_acceleration * delta_time, 1),
                     ),
-                    0
-                },
+                );
+            ) else (
+                if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
+                    self^.player.velocity.2 += 20;
+                );
+                let target_velocity = Vec2.rotate(
+                    Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                    self^.camera.rotation,
+                );
+                self^.player.velocity = Vec3.add(
+                    self^.player.velocity,
+                    {
+                        ...Vec2.mul(
+                            Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
+                            min(player_acceleration * delta_time, 1),
+                        ),
+                        0
+                    },
+                );
+                let gravity = 50;
+                self^.player.velocity.2 -= gravity * delta_time;
             );
-            let gravity = 50;
-            self^.player.velocity.2 -= gravity * delta_time;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
@@ -207,6 +235,9 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .handle_event = (self, event) => (
             match event with (
+                | :KeyPress :F => (
+                    self^.jetpack_enabled = not self^.jetpack_enabled;
+                )
                 | :MouseMove { .delta, ... } => (
                     let degree_per_pixel :: Float32 = 360 / 2000;
                     self^.camera.rotation = Angle.sub(
@@ -217,7 +248,7 @@ const handle_mmo = (self :: &mut Game) => (
                         clamp(
                             Angle.degrees(self^.camera.attack)
                             - delta.1 * degree_per_pixel,
-                            .min = 0,
+                            .min = -90,
                             .max = 90,
                         )
                     );
