@@ -6,7 +6,7 @@ module:
 const Id = Int32;
 
 const PlayerState = newtype {
-    .pos :: Vec3,
+    .position :: Vec3,
 };
 
 const ServerMessage = newtype (

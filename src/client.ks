@@ -41,13 +41,10 @@ const poll_read_line = () -> Option.t[String] => with_return (
 
 const poll_message = () -> Option.t[interop.ServerMessage] => (
     let line = poll_read_line();
-    @native ''
-        #ifdef __EMSCRIPTEN__
-            (Unit){}
-        #else
-            GC_gcollect()
-        #endif
-    '';
+    if not is_emscripten() then (
+        # @native "GC_gcollect()";
+
+    );
     match line with (
         | :None => :None
         | :Some msg => :Some (
@@ -92,7 +89,7 @@ const connect = (address :: String) -> State => (
         .name = "CLIENT",
         .stream = tcp.Stream.connect(address),
     };
-    if true then (
+    if false and not is_emscripten() then (
         let fd :: @opaque_type "int" = @native "\(ctx.stream).sock_fd";
         @native "#include <fcntl.h>";
         @native ''

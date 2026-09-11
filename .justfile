@@ -61,8 +61,8 @@ build-emscripten source="target/compiled/main.c":
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
     # -sMAX_WEBGL_VERSION=2 \
 
-build:
-    just build-c
+build src="src/main.ks":
+    just build-c {{src}}
     just build-native
 
 run:

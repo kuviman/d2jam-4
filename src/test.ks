@@ -21,8 +21,10 @@ if args.connect is :Some address then (
         while client.poll_message() is :Some msg do (
             match msg with (
                 | :RequestUpdate => (
-                    client.send(:Update { .pos = { 0, 0, 0 } });
+                    print("requested update");
+                    client.send(:Update { .position = { 0, 0, 0 } });
                 )
+                | _ => ()
             )
         );
     )

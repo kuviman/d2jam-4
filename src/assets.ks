@@ -1,5 +1,6 @@
 use (import "./lib/_lib.ks").*;
 use (import "./model.ks").*;
+const collisions = import "./collisions.ks";
 
 module:
 
@@ -34,8 +35,42 @@ const Assets = (
         .ground :: ugli.Texture,
     };
 
+    const LevelModel = newtype {
+        .collision_mesh :: collisions.Mesh,
+        .model :: Model.t,
+    };
+
+    impl LevelModel as module = (
+        module:
+
+        const load = (path :: String) -> LevelModel => (
+            let mut collision_mesh = { .faces = ArrayList.new() };
+            let obj = obj.parse(std.fs.read_file(path + "/model.obj"));
+            for face in obj |> ArrayList.into_iter do (
+                let mut mesh_face = {
+                    .vs = ArrayList.new(),
+                    .normal = Vec3.normalize(
+                        Vec3.cross(
+                            Vec3.sub(face.1.a_pos, face.0.a_pos),
+                            Vec3.sub(face.2.a_pos, face.0.a_pos),
+                        )
+                    ),
+                };
+                &mut mesh_face.vs |> ArrayList.push_back(face.0.a_pos);
+                &mut mesh_face.vs |> ArrayList.push_back(face.1.a_pos);
+                &mut mesh_face.vs |> ArrayList.push_back(face.2.a_pos);
+                &mut collision_mesh.faces |> ArrayList.push_back(mesh_face);
+            );
+            {
+                .collision_mesh,
+                .model = Model.load(path),
+            }
+        );
+    );
+
     const Models = newtype {
         .skins :: ArrayList.t[Model.t],
+        .level :: LevelModel,
     };
 
     const load = () -> t => (
@@ -79,6 +114,7 @@ const Assets = (
                 &mut list |> ArrayList.push_back(Model.load("assets/models/daivy"));
                 list
             ),
+            .level = LevelModel.load("assets/models/level"),
         };
 
         {

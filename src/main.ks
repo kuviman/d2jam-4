@@ -2,7 +2,9 @@ use (import "lib/_lib.ks").*;
 use (import "./assets.ks").*;
 use (import "./model.ks").*;
 
+const interop = import "./interop.ks";
 const client = import "./client.ks";
+const collisions = import "./collisions.ks";
 
 module:
 
@@ -21,6 +23,25 @@ impl Entity as module = (
         let assets = @current Assets.Ctx;
         Model.draw(
             assets.models.skins.[entity^.skin],
+            Mat4.translate(entity^.position)
+                |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
+        );
+    );
+);
+
+const OtherPlayer = newtype {
+    .skin :: Int32,
+    .position :: Vec3,
+    .rotation :: Angle,
+};
+
+impl OtherPlayer as module = (
+    module:
+
+    const draw = (entity :: &OtherPlayer) => (
+        let assets = @current Assets.Ctx;
+        Model.draw(
+            assets.models.skins.[entity^.skin],
             Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
                 |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
         );
@@ -33,13 +54,36 @@ const Game = newtype {
     .model_renderer :: Model.Renderer,
     .ground :: Model.t,
     .player :: Entity,
+    .other_players :: OrdMap.t[interop.Id, OtherPlayer],
+    .jetpack_enabled :: Bool,
 };
 
 const handle_mmo = (self :: &mut Game) => (
     while client.poll_message() is :Some msg do (
         match msg with (
+            | :Connected id => (
+                print("Connected " + to_string(id));
+                let player = {
+                    .skin = 1,
+                    .position = { 0, 0, 0 },
+                    .rotation = Angle.from_degrees(0),
+                };
+                &mut self^.other_players |> OrdMap.add(id, player);
+            )
+            | :Disconnected id => (
+                print("Disconnected " + to_string(id));
+                &mut self^.other_players |> OrdMap.remove(id);
+            )
+            | :UpdatePlayer { .id, .state } => (
+                print("Updated " + to_string(id));
+                let player = &mut self^.other_players
+                    |> OrdMap.get_mut(id)
+                    |> Option.unwrap;
+                player^.position = state.position;
+            )
             | :RequestUpdate => (
-                client.send(:Update { .pos = self^.player.position });
+                print("Update requested");
+                client.send(:Update { .position = self^.player.position });
             )
         )
     );
@@ -76,7 +120,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
             {
                 .camera = {
-                    .position = { 0, 0, 0 },
+                    .position = { 0, 0, 5 },
                     .distance = 5,
                     .attack = Angle.from_degrees(30),
                     .rotation = Angle.from_degrees(0),
@@ -92,6 +136,8 @@ const handle_mmo = (self :: &mut Game) => (
                     .skin = 0,
                     .can_jump = false,
                 },
+                .other_players = OrdMap.new(),
+                .jetpack_enabled = false,
             }
         ),
         .draw = self => (
@@ -103,11 +149,15 @@ const handle_mmo = (self :: &mut Game) => (
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
             Model.draw(self^.ground, Mat4.IDENTITY);
+            Model.draw(self^.assets.models.level.model, Mat4.IDENTITY);
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
+            for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
+                OtherPlayer.draw(other_player);
+            );
         ),
         .update = (self, delta_time) => (
-            handle_mmo(self);
+            # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
                 wasd.0 += 1;
@@ -121,37 +171,62 @@ const handle_mmo = (self :: &mut Game) => (
             if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
                 wasd.1 -= 1;
             );
-            if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
-                self^.player.velocity.2 += 20;
-            );
             let player_speed = 15;
             let player_acceleration = 20;
-            let target_velocity = Vec2.rotate(
-                Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
-                self^.camera.rotation,
-            );
-            self^.player.velocity = Vec3.add(
-                self^.player.velocity,
-                {
-                    ...Vec2.mul(
-                        Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
+            if self^.jetpack_enabled then (
+                let target_velocity :: Vec3 = {
+                    ...Vec2.rotate(
+                        Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                        self^.camera.rotation,
+                    ),
+                    (
+                        let mut z = 0;
+                        if geng.input.Key.is_pressed(:Space) then (
+                            z += 1;
+                        );
+                        if geng.input.Key.is_pressed(:LeftShift) then (
+                            z -= 1;
+                        );
+                        z * player_speed
+                    ),
+                };
+                self^.player.velocity = Vec3.add(
+                    self^.player.velocity,
+                    Vec3.mul(
+                        Vec3.sub(target_velocity, self^.player.velocity),
                         min(player_acceleration * delta_time, 1),
                     ),
-                    0
-                },
+                );
+            ) else (
+                if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
+                    self^.player.velocity.2 += 20;
+                );
+                let target_velocity = Vec2.rotate(
+                    Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                    self^.camera.rotation,
+                );
+                self^.player.velocity = Vec3.add(
+                    self^.player.velocity,
+                    {
+                        ...Vec2.mul(
+                            Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
+                            min(player_acceleration * delta_time, 1),
+                        ),
+                        0
+                    },
+                );
+                let gravity = 50;
+                self^.player.velocity.2 -= gravity * delta_time;
             );
-            let gravity = 50;
-            self^.player.velocity.2 -= gravity * delta_time;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
             );
-            if self^.player.position.2 < 0 then (
-                self^.player.position.2 = 0;
-                self^.player.velocity.2 = 0;
-                self^.player.can_jump = true;
-            ) else (
-                self^.player.can_jump = false;
+            self^.player.can_jump = collisions.collide_and_react(
+                .position = &mut self^.player.position,
+                .velocity = &mut self^.player.velocity,
+                .radius = 1,
+                .mesh = &self^.assets.models.level.collision_mesh,
             );
             if wasd.0 != 0 or wasd.1 != 0 then (
                 self^.player.rotation = Angle.add(self^.camera.rotation, Vec2.arg(wasd));
@@ -160,6 +235,9 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .handle_event = (self, event) => (
             match event with (
+                | :KeyPress :F => (
+                    self^.jetpack_enabled = not self^.jetpack_enabled;
+                )
                 | :MouseMove { .delta, ... } => (
                     let degree_per_pixel :: Float32 = 360 / 2000;
                     self^.camera.rotation = Angle.sub(
@@ -170,7 +248,7 @@ const handle_mmo = (self :: &mut Game) => (
                         clamp(
                             Angle.degrees(self^.camera.attack)
                             - delta.1 * degree_per_pixel,
-                            .min = 0,
+                            .min = -90,
                             .max = 90,
                         )
                     );
@@ -184,6 +262,7 @@ const handle_mmo = (self :: &mut Game) => (
 const cli = import "./cli.ks";
 
 let args = cli.parse();
+@comment_out (
 if args.server is :Some address then (
     const server = import "./server.ks";
     let run = () => server.run(address);
@@ -196,8 +275,9 @@ if args.server is :Some address then (
         )
     );
 );
+);
 if args.connect is :Some address then (
-    let c = client.connect(address);
-    with client.Ctx = c;
+    # let c = client.connect(address);
+    # with client.Ctx = c;
     geng.run[Game]();
 );

@@ -50,10 +50,47 @@ const Key = newtype (
     | :ArrowUp
     | :ArrowDown
     | :Space
+    | :LeftShift
 );
 
 impl Key as module = (
     module:
+
+    const from_scancode = (code :: SDL.Scancode) -> Option.t[Key] => with_return (
+        if @native "\(code) == SDL_SCANCODE_A" then return :Some :A;
+        if @native "\(code) == SDL_SCANCODE_B" then return :Some :B;
+        if @native "\(code) == SDL_SCANCODE_C" then return :Some :C;
+        if @native "\(code) == SDL_SCANCODE_D" then return :Some :D;
+        if @native "\(code) == SDL_SCANCODE_E" then return :Some :E;
+        if @native "\(code) == SDL_SCANCODE_F" then return :Some :F;
+        if @native "\(code) == SDL_SCANCODE_G" then return :Some :G;
+        if @native "\(code) == SDL_SCANCODE_H" then return :Some :H;
+        if @native "\(code) == SDL_SCANCODE_I" then return :Some :I;
+        if @native "\(code) == SDL_SCANCODE_J" then return :Some :J;
+        if @native "\(code) == SDL_SCANCODE_K" then return :Some :K;
+        if @native "\(code) == SDL_SCANCODE_L" then return :Some :L;
+        if @native "\(code) == SDL_SCANCODE_M" then return :Some :M;
+        if @native "\(code) == SDL_SCANCODE_N" then return :Some :N;
+        if @native "\(code) == SDL_SCANCODE_O" then return :Some :O;
+        if @native "\(code) == SDL_SCANCODE_P" then return :Some :P;
+        if @native "\(code) == SDL_SCANCODE_Q" then return :Some :Q;
+        if @native "\(code) == SDL_SCANCODE_R" then return :Some :R;
+        if @native "\(code) == SDL_SCANCODE_S" then return :Some :S;
+        if @native "\(code) == SDL_SCANCODE_T" then return :Some :T;
+        if @native "\(code) == SDL_SCANCODE_U" then return :Some :U;
+        if @native "\(code) == SDL_SCANCODE_V" then return :Some :V;
+        if @native "\(code) == SDL_SCANCODE_W" then return :Some :W;
+        if @native "\(code) == SDL_SCANCODE_X" then return :Some :X;
+        if @native "\(code) == SDL_SCANCODE_Y" then return :Some :Y;
+        if @native "\(code) == SDL_SCANCODE_Z" then return :Some :Z;
+        if @native "\(code) == SDL_SCANCODE_LEFT" then return :Some :ArrowLeft;
+        if @native "\(code) == SDL_SCANCODE_RIGHT" then return :Some :ArrowRight;
+        if @native "\(code) == SDL_SCANCODE_UP" then return :Some :ArrowUp;
+        if @native "\(code) == SDL_SCANCODE_DOWN" then return :Some :ArrowDown;
+        if @native "\(code) == SDL_SCANCODE_SPACE" then return :Some :Space;
+        if @native "\(code) == SDL_SCANCODE_LSHIFT" then return :Some :LeftShift;
+        :None
+    );
 
     const scancode = (key :: Key) -> SDL.Scancode => match key with (
         | :A => @native "SDL_SCANCODE_A"
@@ -87,6 +124,7 @@ impl Key as module = (
         | :ArrowUp => @native "SDL_SCANCODE_UP"
         | :ArrowDown => @native "SDL_SCANCODE_DOWN"
         | :Space => @native "SDL_SCANCODE_SPACE"
+        | :LeftShift => @native "SDL_SCANCODE_LSHIFT"
     );
 
     const is_pressed = (key :: Key) -> Bool => (
@@ -134,6 +172,7 @@ const Event = newtype (
         .position :: Vec2,
         .delta :: Vec2,
     }
+    | :KeyPress Key
     | :MousePress { .button :: MouseButton }
     | :PointerPress { .pos :: Vec2 }
     | :Quit
@@ -169,6 +208,9 @@ const convert = (event :: SDL.Event) -> Option.t[Event] => with_return (
                 @native "-\(event).motion.yrel",
             },
         }
+    ) else if @native "\(event).type == SDL_EVENT_KEY_DOWN" then (
+        Key.from_scancode(@native "\(event).key.scancode")
+            |> Option.map(key => :KeyPress key)
     ) else (
         :None
     )
