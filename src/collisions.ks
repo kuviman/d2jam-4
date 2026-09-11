@@ -79,14 +79,6 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
         .penetration = -1,
         .normal = { 0, 0, 0 },
     };
-    # Ground
-    update(
-        &mut result,
-        {
-            .penetration = entity.radius - entity.position.2,
-            .normal = { 0, 0, 1 },
-        },
-    );
     for face in &mesh^.faces |> ArrayList.iter do (
         collide_face(&mut result, entity, face);
     );

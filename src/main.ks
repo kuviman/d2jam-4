@@ -12,7 +12,7 @@ const Entity = newtype {
     .skin :: Int32,
     .position :: Vec3,
     .velocity :: Vec3,
-    .rotation :: Angle,
+    .rotation :: Quat,
     .can_jump :: Bool,
 };
 
@@ -24,7 +24,7 @@ impl Entity as module = (
         Model.draw(
             assets.models.skins.[entity^.skin],
             Mat4.translate(entity^.position)
-                |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
+                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation))
         );
     );
 );
@@ -130,9 +130,9 @@ const handle_mmo = (self :: &mut Game) => (
                 .ground,
                 .model_renderer = Model.Renderer.init(),
                 .player = {
-                    .position = { 0, 0, 0 },
+                    .position = { 0, 0, 10 },
                     .velocity = { 0, 0, 0 },
-                    .rotation = Angle.from_degrees(150),
+                    .rotation = Quat.IDENTITY,
                     .skin = 0,
                     .can_jump = false,
                 },
@@ -148,7 +148,6 @@ const handle_mmo = (self :: &mut Game) => (
                 .framebuffer_size = geng.get_window_size(),
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
-            Model.draw(self^.ground, Mat4.IDENTITY);
             Model.draw(self^.assets.models.level.model, Mat4.IDENTITY);
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
@@ -157,6 +156,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => (
+            let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
@@ -228,9 +228,17 @@ const handle_mmo = (self :: &mut Game) => (
                 .radius = 1,
                 .mesh = &self^.assets.models.level.collision_mesh,
             );
-            if wasd.0 != 0 or wasd.1 != 0 then (
-                self^.player.rotation = Angle.add(self^.camera.rotation, Vec2.arg(wasd));
-            );
+            self^.player.rotation = Quat.mul_quat(
+                Quat.from_axis_angle(
+                    {
+                        ...Vec2.rotate_90(Vec3.xy(self^.player.velocity)),
+                        0,
+                    },
+                    Angle.from_degrees(360 * delta_time / player_speed),
+                ),
+                self^.player.rotation,
+            )
+                |> Quat.normalize;
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (
