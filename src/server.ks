@@ -29,14 +29,17 @@ const read_line = (stream :: &mut tcp.Stream) -> String => (
             .length = \(length),
         }
     '';
+    @native "GC_gcollect()";
     line
 );
 
 const handle_client_message = (msg :: interop.ClientMessage) => (
     match msg with (
         | :Update state => (
-            print("Client updated state");
-            (@current ClientCtx).send(:RequestUpdate);
+            # print("Client updated state");
+            (
+                @current ClientCtx
+            ).send(:RequestUpdate);
         )
     );
 );
@@ -47,11 +50,9 @@ const handle_client = (mut client) => (
         let send = msg => (
             let msg = include_ast json.construct_value(`(msg), interop.ServerMessage);
             let msg = to_string(msg);
-            print("sending to " + client.addr + ": " + msg);
+            # print("sending to " + client.addr + ": " + msg);
             tcp.Stream.write(&mut client.stream, &(msg + "\n"));
-            @native "fflush(\(client.stream).writer)";
         );
-        send(:RequestUpdate);
         send(:RequestUpdate);
         with ClientCtx = {
             .send,
@@ -63,12 +64,13 @@ const handle_client = (mut client) => (
         );
         loop (
             let msg = read_line(&mut client.stream);
-            std.io.print <| "from " + client.addr + ": " + msg;
+            # std.io.print <| "from " + client.addr + ": " + msg;
             let msg = match json.parse(&mut json.Reader.create(&msg)) with (
                 | :Ok msg => msg
                 | :Error _ => error("Failed to parse json") |> from_never
             );
-            handle_client_message(include_ast json.parse_value(`(msg), interop.ClientMessage));
+            let msg = include_ast json.parse_value(`(msg), interop.ClientMessage);
+            handle_client_message(msg);
         );
     );
     std.io.print <| "Client disconnected: " + client.addr;
@@ -82,6 +84,7 @@ const run = (address :: String) => (
     loop (
         print("Waiting for client to connect...");
         let client = tcp.Listener.accept(&mut listener, .close_on_exec = true);
+        # handle_client(client);
         std.thread.spawn(() => handle_client(client));
     );
     listener |> tcp.Listener.close;

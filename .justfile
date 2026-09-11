@@ -1,18 +1,18 @@
 default:
     echo "Hi"
 
-build-c:
+build-c source="src/main.ks":
     kastc compile \
         --target c \
         --output target/compiled/main.c \
-        src/main.ks
+        {{source}}
 
 build-native:
     ${CC:-gcc} \
         -pthread \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \
-        -g -O1 \
+        -g -O0 \
         -o target/compiled/main.exe \
         target/compiled/main.c \
         -fsanitize=address,leak,undefined \
@@ -24,7 +24,7 @@ build-windows-do source:
         -mwindows \
         -lm -lgc -lSDL3 -lSDL3_image -lbacktrace \
         -Wfatal-errors \
-        -g -O1 \
+        -g -O0 \
         -o target/compiled/main.exe \
         {{source}}
 
@@ -35,6 +35,7 @@ build-emscripten source="target/compiled/main.c":
     rm -rf target/web
     mkdir -p target/web
     emcc {{source}} \
+        --shell-file shell.html \
         -o target/web/index.html \
         -I ${BOEHMGC_WEB}/include \
         -L ${BOEHMGC_WEB}/lib \
@@ -58,7 +59,6 @@ build-emscripten source="target/compiled/main.c":
         -s ASYNCIFY \
         -w
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
-    # --shell-file shell.html \
     # -sMAX_WEBGL_VERSION=2 \
 
 build:

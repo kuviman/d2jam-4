@@ -48,7 +48,6 @@ const handle_mmo = (self :: &mut Game) => (
 @eval (
     impl Game as geng.App = {
         .init = () => (
-            print("YO! " + (@current client.Ctx).name);
             SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
             let assets = Assets.load();
             let ground = (
@@ -199,8 +198,6 @@ if args.server is :Some address then (
 );
 if args.connect is :Some address then (
     let c = client.connect(address);
-    print("HUH? " + c.name);
     with client.Ctx = c;
-    print("YO? " + (@current client.Ctx).name);
     geng.run[Game]();
 );
