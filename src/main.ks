@@ -53,7 +53,7 @@ const Game = newtype {
     .camera :: geng.Camera,
     .assets :: Assets.t,
     .model_renderer :: Model.Renderer,
-    .ground :: Model.t,
+    .water :: Model.t,
     .player :: Entity,
     .other_players :: OrdMap.t[interop.Id, OtherPlayer],
     .jetpack_enabled :: Bool,
@@ -94,8 +94,10 @@ const handle_mmo = (self :: &mut Game) => (
     impl Game as geng.App = {
         .init = () => (
             SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
+            @native "glEnable(GL_BLEND)";
+            @native "glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)";
             let assets = Assets.load();
-            let ground = (
+            let water = (
                 let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 100);
                 let mut vs = ArrayList.new();
                 for (_ :: Int32) in 0..4 do (
@@ -115,7 +117,7 @@ const handle_mmo = (self :: &mut Game) => (
                 &mut data |> ArrayList.push_back(vertex(2));
                 &mut data |> ArrayList.push_back(vertex(3));
                 {
-                    .texture = assets.textures.ground,
+                    .texture = assets.textures.water,
                     .buffer = ugli.VertexBuffer.init(&data),
                 }
             );
@@ -128,7 +130,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .fov = Angle.from_degrees(90),
                 },
                 .assets,
-                .ground,
+                .water,
                 .model_renderer = Model.Renderer.init(),
                 .player = {
                     .position = { 0, 0, 10 },
@@ -156,6 +158,7 @@ const handle_mmo = (self :: &mut Game) => (
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
+            Model.draw(self^.water, Mat4.IDENTITY);
         ),
         .update = (self, delta_time) => (
             let delta_time = min(delta_time, 0.050);
@@ -204,7 +207,14 @@ const handle_mmo = (self :: &mut Game) => (
                     self^.player.velocity.2 += 20;
                 );
                 let gravity = 50;
-                self^.player.velocity.2 -= gravity * delta_time;
+                if self^.player.position.2 < 0 then (
+                    self^.player.velocity.2 = min(
+                        self^.player.velocity.2 + gravity * delta_time,
+                        player_speed,
+                    );
+                ) else (
+                    self^.player.velocity.2 -= gravity * delta_time;
+                );
             );
 
             let max_angular_velocity = 10;

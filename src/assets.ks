@@ -33,6 +33,7 @@ const Assets = (
         .mute :: ugli.Texture,
         .muted :: ugli.Texture,
         .ground :: ugli.Texture,
+        .water :: ugli.Texture,
     };
 
     const LevelModel = newtype {
@@ -102,6 +103,11 @@ const Assets = (
             .muted = load_texture("muted.png"),
             .ground = (
                 let mut texture = geng.load_texture("assets/textures/ground.png", :Nearest);
+                &mut texture |> ugli.Texture.set_wrap(:Repeat);
+                texture
+            ),
+            .water = (
+                let mut texture = geng.load_texture("assets/textures/water.png", :Nearest);
                 &mut texture |> ugli.Texture.set_wrap(:Repeat);
                 texture
             ),
