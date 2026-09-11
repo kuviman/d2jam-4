@@ -17,6 +17,14 @@ impl Angle as module = (
         .radians = a.radians - b.radians,
     };
 
+    const mul = (a :: Angle, k :: Float32) -> Angle => {
+        .radians = a.radians * k,
+    };
+
+    const div = (a :: Angle, k :: Float32) -> Angle => {
+        .radians = a.radians / k,
+    };
+
     const from_degrees = (degrees :: Float32) -> Angle => (
         { .radians = degrees * PI / 180 }
     );

@@ -8,3 +8,4 @@ include "./vec3.ks";
 include "./vec4.ks";
 include "./mat3.ks";
 include "./mat4.ks";
+include "./quat.ks";

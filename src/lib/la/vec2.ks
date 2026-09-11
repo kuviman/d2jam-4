@@ -31,6 +31,10 @@ impl Vec2 as module = (
         { f(v.0), f(v.1) }
     );
 
+    const rotate_90 = (v :: Vec2) -> Vec2 => (
+        { -v.1, v.0 }
+    );
+
     const rotate = (v :: Vec2, angle :: Angle) -> Vec2 => (
         let { sin, cos } = Angle.sin_cos(angle);
         { v.0 * cos - v.1 * sin, v.0 * sin + v.1 * cos }
