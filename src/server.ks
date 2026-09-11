@@ -1,14 +1,15 @@
 use std.net.tcp;
 use std.collections.OrdMap;
+use std.collections.OrdSet;
 const interop = import "./interop.ks";
 const json = import "./json.ks";
+use std.sync.Mutex;
 
 module:
 
-const ClientCtx = @context newtype {
-    .disconnected :: () -> Never,
-    .send :: interop.ServerMessage -> (),
-};
+include "./server_logic.ks";
+
+const ClientCtx = @context ClientState;
 
 const read_line = (stream :: &mut tcp.Stream) -> String => (
     let mut buf :: @opaque_type "char*" = @native "NULL";
@@ -29,22 +30,11 @@ const read_line = (stream :: &mut tcp.Stream) -> String => (
             .length = \(length),
         }
     '';
-    @native "GC_gcollect()";
+    # @native "GC_gcollect()";
     line
 );
 
-const handle_client_message = (msg :: interop.ClientMessage) => (
-    match msg with (
-        | :Update state => (
-            # print("Client updated state");
-            (
-                @current ClientCtx
-            ).send(:RequestUpdate);
-        )
-    );
-);
-
-const handle_client = (mut client) => (
+const handle_client = (server_state, mut client) => (
     std.io.print <| "New client connected: " + client.addr;
     with_return (
         let send = msg => (
@@ -53,15 +43,21 @@ const handle_client = (mut client) => (
             # print("sending to " + client.addr + ": " + msg);
             tcp.Stream.write(&mut client.stream, &(msg + "\n"));
         );
-        send(:RequestUpdate);
+        let state = Mutex.lock(server_state);
+        let id = state.value^.next_id;
+        state.value^.next_id += 1;
         with ClientCtx = {
+            .id,
             .send,
             .disconnected = () => return,
+            .known_players = OrdSet.new(),
         };
         let error = (s :: String) -> Never => (
             print <| "Client error (" + client.addr + "): " + s;
             return
         );
+        on_connect(state.value, &mut (@current ClientCtx));
+        Mutex.unlock(state);
         loop (
             let msg = read_line(&mut client.stream);
             # std.io.print <| "from " + client.addr + ": " + msg;
@@ -70,7 +66,9 @@ const handle_client = (mut client) => (
                 | :Error _ => error("Failed to parse json") |> from_never
             );
             let msg = include_ast json.parse_value(`(msg), interop.ClientMessage);
-            handle_client_message(msg);
+            let state = Mutex.lock(server_state);
+            handle_client_message(state.value, &mut (@current ClientCtx), msg);
+            Mutex.unlock(state);
         );
     );
     std.io.print <| "Client disconnected: " + client.addr;
@@ -81,11 +79,13 @@ const run = (address :: String) => (
     print("Starting server on " + address);
     let mut listener = tcp.Listener.bind(address);
     tcp.Listener.listen(&mut listener, 5);
+    let server_state = State.init();
+    let server_state = std.sync.Mutex.new(server_state);
     loop (
         print("Waiting for client to connect...");
         let client = tcp.Listener.accept(&mut listener, .close_on_exec = true);
-        # handle_client(client);
-        std.thread.spawn(() => handle_client(client));
+        handle_client(&server_state, client);
+    # std.thread.spawn(() => handle_client(&server_state, client));
     );
     listener |> tcp.Listener.close;
 );

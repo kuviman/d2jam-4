@@ -2,6 +2,7 @@ use (import "lib/_lib.ks").*;
 use (import "./assets.ks").*;
 use (import "./model.ks").*;
 
+const interop = import "./interop.ks";
 const client = import "./client.ks";
 
 module:
@@ -27,19 +28,60 @@ impl Entity as module = (
     );
 );
 
+const OtherPlayer = newtype {
+    .skin :: Int32,
+    .position :: Vec3,
+    .rotation :: Angle,
+};
+
+impl OtherPlayer as module = (
+    module:
+
+    const draw = (entity :: &OtherPlayer) => (
+        let assets = @current Assets.Ctx;
+        Model.draw(
+            assets.models.skins.[entity^.skin],
+            Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
+                |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
+        );
+    );
+);
+
 const Game = newtype {
     .camera :: geng.Camera,
     .assets :: Assets.t,
     .model_renderer :: Model.Renderer,
     .ground :: Model.t,
     .player :: Entity,
+    .other_players :: OrdMap.t[interop.Id, OtherPlayer],
 };
 
 const handle_mmo = (self :: &mut Game) => (
     while client.poll_message() is :Some msg do (
         match msg with (
+            | :Connected id => (
+                print("Connected " + to_string(id));
+                let player = {
+                    .skin = 1,
+                    .position = { 0, 0, 0 },
+                    .rotation = Angle.from_degrees(0),
+                };
+                &mut self^.other_players |> OrdMap.add(id, player);
+            )
+            | :Disconnected id => (
+                print("Disconnected " + to_string(id));
+                &mut self^.other_players |> OrdMap.remove(id);
+            )
+            | :UpdatePlayer { .id, .state } => (
+                print("Updated " + to_string(id));
+                let player = &mut self^.other_players
+                    |> OrdMap.get_mut(id)
+                    |> Option.unwrap;
+                player^.position = state.position;
+            )
             | :RequestUpdate => (
-                client.send(:Update { .pos = self^.player.position });
+                print("Update requested");
+                client.send(:Update { .position = self^.player.position });
             )
         )
     );
@@ -92,6 +134,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .skin = 0,
                     .can_jump = false,
                 },
+                .other_players = OrdMap.new(),
             }
         ),
         .draw = self => (
@@ -105,6 +148,9 @@ const handle_mmo = (self :: &mut Game) => (
             Model.draw(self^.ground, Mat4.IDENTITY);
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
+            for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
+                OtherPlayer.draw(other_player);
+            );
         ),
         .update = (self, delta_time) => (
             handle_mmo(self);
