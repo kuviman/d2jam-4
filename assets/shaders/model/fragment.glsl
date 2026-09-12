@@ -12,7 +12,7 @@ vec4 lerp(vec4 a, vec4 b, float t) {
 }
 
 void main() {
-    vec3 light_dir = normalize(vec3(2, 6, 7));
+    vec3 light_dir = normalize(vec3(2.0, 6.0, 7.0));
     float light_k = max(dot(light_dir, normalize(v_normal)), 0.0);
     float ambient_light = 0.8;
     light_k = ambient_light + light_k * (1.0 - ambient_light);
@@ -27,7 +27,7 @@ void main() {
         if (d < hightlight_radius && d > hightlight_radius - 0.1) {
             hightlight = 0.1;
         }
-        if (length(u_player_pos - v_world_pos) > 2) {
+        if (length(u_player_pos - v_world_pos) > 2.0) {
             hightlight = 0.0;
         }
     }
