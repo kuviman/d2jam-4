@@ -39,7 +39,7 @@ void main() {
     gl_FragColor = lerp(
         gl_FragColor,
         vec4(0.8, 0.8, 1.0, 1.0),
-        pow(clamp(-v_camera_pos.z / 200, 0.0, 1.0), 2.0)
+        pow(clamp(-v_camera_pos.z / 200.0, 0.0, 1.0), 2.0)
     );
     // float verticality = 0.9;
     // float K = 0.1 * max(v_camera_normal.z - verticality, 0.0) / (1.0 - verticality);

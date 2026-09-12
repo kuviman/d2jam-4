@@ -58,7 +58,6 @@ build-emscripten source="target/compiled/main.c":
         -s ASYNCIFY \
         -s ASYNCIFY_STACK_SIZE=64MB \
         -w
-    # -s ALLOW_MEMORY_GROWTH \
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
     # -sMAX_WEBGL_VERSION=2 \
 
