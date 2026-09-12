@@ -71,7 +71,7 @@ const Assets = (
 
     const Models = newtype {
         .skins :: ArrayList.t[Model.t],
-        .level :: LevelModel,
+        .level :: ArrayList.t[LevelModel],
     };
 
     const load = () -> t => (
@@ -116,11 +116,22 @@ const Assets = (
         let models = {
             .skins = (
                 let mut list = ArrayList.new();
-                &mut list |> ArrayList.push_back(Model.load("assets/models/unicorn"));
-                &mut list |> ArrayList.push_back(Model.load("assets/models/daivy"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/daivy"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/fart"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/fish"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/pgorley"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/unicorn"));
                 list
             ),
-            .level = LevelModel.load("assets/models/level"),
+            .level = (
+                let mut list = ArrayList.new();
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/grass"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/lava"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/logs"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/rock"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/sand"));
+                list
+            ),
         };
 
         {

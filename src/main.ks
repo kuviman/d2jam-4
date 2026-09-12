@@ -160,7 +160,9 @@ const handle_mmo = (self :: &mut Game) => (
                 .framebuffer_size = geng.get_window_size(),
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
-            Model.draw(self^.assets.models.level.model, Mat4.IDENTITY);
+            for level_model in &self^.assets.models.level |> ArrayList.iter do (
+                Model.draw(level_model^.model, Mat4.IDENTITY);
+            );
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
             Entity.draw(&self^.player);
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
@@ -267,13 +269,15 @@ const handle_mmo = (self :: &mut Game) => (
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
             );
-            self^.player.can_jump = collisions.collide_and_react(
-                .position = &mut self^.player.position,
-                .velocity = &mut self^.player.velocity,
-                .angular_velocity = &mut self^.player.angular_velocity,
-                .radius_change_speed = scale_speed,
-                .radius = self^.player.scale,
-                .mesh = &self^.assets.models.level.collision_mesh,
+            for level_model in &self^.assets.models.level |> ArrayList.iter do (
+                collisions.collide_and_react(
+                    .position = &mut self^.player.position,
+                    .velocity = &mut self^.player.velocity,
+                    .angular_velocity = &mut self^.player.angular_velocity,
+                    .radius_change_speed = scale_speed,
+                    .radius = self^.player.scale,
+                    .mesh = &level_model^.collision_mesh,
+                );
             );
             self^.player.velocity = Vec3.clamp_len(self^.player.velocity, MAX_SPEED);
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
@@ -282,6 +286,9 @@ const handle_mmo = (self :: &mut Game) => (
             match event with (
                 | :KeyPress :F => (
                     self^.jetpack_enabled = not self^.jetpack_enabled;
+                )
+                | :KeyPress :Enter => (
+                    self^.player.skin = (self^.player.skin + 1) % ArrayList.length(&self^.assets.models.skins);
                 )
                 | :MouseMove { .delta, ... } => (
                     let degree_per_pixel :: Float32 = 360 / 2000;

@@ -50,6 +50,7 @@ const Key = newtype (
     | :ArrowUp
     | :ArrowDown
     | :Space
+    | :Enter
     | :LeftShift
 );
 
@@ -89,6 +90,7 @@ impl Key as module = (
         if @native "\(code) == SDL_SCANCODE_DOWN" then return :Some :ArrowDown;
         if @native "\(code) == SDL_SCANCODE_SPACE" then return :Some :Space;
         if @native "\(code) == SDL_SCANCODE_LSHIFT" then return :Some :LeftShift;
+        if @native "\(code) == SDL_SCANCODE_RETURN" then return :Some :Enter;
         :None
     );
 
@@ -125,6 +127,7 @@ impl Key as module = (
         | :ArrowDown => @native "SDL_SCANCODE_DOWN"
         | :Space => @native "SDL_SCANCODE_SPACE"
         | :LeftShift => @native "SDL_SCANCODE_LSHIFT"
+        | :Enter => @native "SDL_SCANCODE_RETURN"
     );
 
     const is_pressed = (key :: Key) -> Bool => (
