@@ -210,6 +210,38 @@ const handle_mmo = (self :: &mut Game) => (
                 OtherPlayer.draw(other_player);
             );
             Model.draw(self^.water, Mat4.IDENTITY);
+
+            with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
+                {
+                    .position = { 0, 0, 0 },
+                    .rotation = Angle.from_degrees(90),
+                    .attack = Angle.from_degrees(90),
+                    .fov = Angle.from_degrees(90),
+                    .distance = 10,
+                },
+                .framebuffer_size = geng.get_window_size(),
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                match self^.timer with (
+                    | :WaitForMove => "wasd, space, mouse"
+                    | :Working t => (
+                        let seconds :: Int32 = @native "\(t)";
+                        let minutes = seconds / 60;
+                        let seconds = seconds % 60;
+                        to_string(minutes)
+                        + ":"
+                        + to_string(seconds / 10)
+                        + to_string(seconds % 10)
+                    )
+                    | :Disabled => ""
+                ),
+                .matrix = Mat4.translate({ 0, 7, 0})
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                    |> Mat4.mul_mat(Mat4.scale_uniform(2)),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
         ),
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);

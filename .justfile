@@ -12,7 +12,7 @@ build-native:
         -pthread \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \
-        -g -O3 \
+        -g -O0 \
         -o target/compiled/main.exe \
         target/compiled/main.c \
         -fsanitize=address,leak,undefined \
