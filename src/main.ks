@@ -26,13 +26,21 @@ const MAX_SPEED = 50;
 impl Entity as module = (
     module:
 
-    const draw = (entity :: &Entity) => (
+    const draw = (entity :: &Entity, .jetpack :: Bool) => (
         let assets = @current Assets.Ctx;
         Model.draw(
             assets.models.skins.[entity^.skin],
             Mat4.translate(entity^.position)
                 |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
-                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation))
+                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
+        );
+        if jetpack then (
+            let angle = Angle.from_degrees(1000 * geng.time_since_start());
+            Model.draw(
+                assets.models.jetpack,
+                Mat4.translate(entity^.position)
+                    |> Mat4.mul_mat(Mat4.rotate_z(angle)),
+            );
         );
     );
 );
@@ -164,7 +172,7 @@ const handle_mmo = (self :: &mut Game) => (
                 Model.draw(level_model^.model, Mat4.IDENTITY);
             );
             Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
-            Entity.draw(&self^.player);
+            Entity.draw(&self^.player, .jetpack = self^.jetpack_enabled);
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
@@ -225,7 +233,7 @@ const handle_mmo = (self :: &mut Game) => (
                 );
             );
 
-            let scale_speed :: Float32 = if geng.input.Key.is_pressed(:Space) then (
+            let scale_speed :: Float32 = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
                 if self^.player.scale < MAX_SCALE then 1 else 0
             ) else (
                 if self^.player.scale > MIN_SCALE then -1 else 0

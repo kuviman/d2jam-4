@@ -72,6 +72,7 @@ const Assets = (
     const Models = newtype {
         .skins :: ArrayList.t[Model.t],
         .level :: ArrayList.t[LevelModel],
+        .jetpack :: Model.t,
     };
 
     const load = () -> t => (
@@ -132,6 +133,7 @@ const Assets = (
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/sand"));
                 list
             ),
+            .jetpack = Model.load("assets/models/jetpack"),
         };
 
         {

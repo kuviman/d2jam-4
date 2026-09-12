@@ -20,7 +20,8 @@ const Model = (
             &mut data |> ArrayList.push_back(face.2);
         );
         let buffer = ugli.VertexBuffer.init(&data);
-        let texture = ugli.Texture.load(path + "/texture.png", :Nearest);
+        let mut texture = ugli.Texture.load(path + "/texture.png", :Nearest);
+        &mut texture |> ugli.Texture.set_wrap(:Repeat);
         { .buffer, .texture }
     );
 
