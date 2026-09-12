@@ -214,7 +214,7 @@ const handle_mmo = (self :: &mut Game) => (
                 time^ += delta_time;
             );
             # handle_mmo(self);
-            geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 1 else 0);
+            geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
             let mut max_speed = MAX_SPEED;
             if self^.jetpack_enabled then (
                 self^.timer = :Disabled;
