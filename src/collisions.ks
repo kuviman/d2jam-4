@@ -182,16 +182,19 @@ const collide_and_react = (
     .position :: &mut Vec3,
     .velocity :: &mut Vec3,
     .angular_velocity :: &mut Vec3,
+    .radius_change_speed :: Float32,
     .radius :: Float32,
     .mesh :: &Mesh,
 ) -> Bool => (
     let bounciness = 0.1;
+    let jump_modifier = 4;
     if collide({ .position = position^, .radius }, mesh) is :Some collision then (
         position^ = Vec3.add(
             position^,
             Vec3.mul(collision.normal, collision.penetration),
         );
-        let velocity_along_normal = Vec3.dot(velocity^, collision.normal);
+        let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
+            - radius_change_speed * jump_modifier;
         if velocity_along_normal < 0 then (
             velocity^ = Vec3.add(
                 velocity^,
@@ -200,7 +203,7 @@ const collide_and_react = (
         );
         let relative_angular_velocity = Vec3.add(
             angular_velocity^,
-            Vec3.cross(velocity^, collision.normal),
+            Vec3.div(Vec3.cross(velocity^, collision.normal), radius),
         );
         let friction = 0.5;
         let angular_impulse = Vec3.mul(

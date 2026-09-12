@@ -67,6 +67,17 @@ impl Mat4 as module = (
         { 0, 0, 0, 1 },
     };
 
+    const scale = ({ x, y, z } :: Vec3) -> Mat4 => {
+        { x, 0, 0, 0 },
+        { 0, y, 0, 0 },
+        { 0, 0, z, 0 },
+        { 0, 0, 0, 1 },
+    };
+
+    const scale_uniform = (k :: Float32) -> Mat4 => (
+        scale({ k, k, k })
+    );
+
     const ortho = (
         .left :: Float32,
         .right :: Float32,

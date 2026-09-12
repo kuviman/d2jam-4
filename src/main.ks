@@ -15,7 +15,13 @@ const Entity = newtype {
     .rotation :: Quat,
     .angular_velocity :: Vec3,
     .can_jump :: Bool,
+    .scale :: Float32,
 };
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 2;
+
+const MAX_SPEED = 50;
 
 impl Entity as module = (
     module:
@@ -25,6 +31,7 @@ impl Entity as module = (
         Model.draw(
             assets.models.skins.[entity^.skin],
             Mat4.translate(entity^.position)
+                |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
                 |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation))
         );
     );
@@ -139,6 +146,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .angular_velocity = { 0, 0, 0 },
                     .skin = 0,
                     .can_jump = false,
+                    .scale = 1,
                 },
                 .other_players = OrdMap.new(),
                 .jetpack_enabled = false,
@@ -203,18 +211,29 @@ const handle_mmo = (self :: &mut Game) => (
                     ),
                 );
             ) else (
-                if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
-                    self^.player.velocity.2 += 20;
-                );
                 let gravity = 50;
+                let water_force = 20;
                 if self^.player.position.2 < 0 then (
                     self^.player.velocity.2 = min(
-                        self^.player.velocity.2 + gravity * delta_time,
+                        self^.player.velocity.2 + water_force * delta_time,
                         player_speed,
                     );
                 ) else (
                     self^.player.velocity.2 -= gravity * delta_time;
                 );
+            );
+
+            let scale_speed :: Float32 = if geng.input.Key.is_pressed(:Space) then (
+                if self^.player.scale < MAX_SCALE then 1 else 0
+            ) else (
+                if self^.player.scale > MIN_SCALE then -1 else 0
+            );
+            let scale_time = 0.2;
+            let scale_speed = scale_speed / scale_time;
+            self^.player.scale = clamp(
+                self^.player.scale + scale_speed * delta_time,
+                .min = MIN_SCALE,
+                .max = MAX_SCALE,
             );
 
             let max_angular_velocity = 10;
@@ -252,9 +271,11 @@ const handle_mmo = (self :: &mut Game) => (
                 .position = &mut self^.player.position,
                 .velocity = &mut self^.player.velocity,
                 .angular_velocity = &mut self^.player.angular_velocity,
-                .radius = 1,
+                .radius_change_speed = scale_speed,
+                .radius = self^.player.scale,
                 .mesh = &self^.assets.models.level.collision_mesh,
             );
+            self^.player.velocity = Vec3.clamp_len(self^.player.velocity, MAX_SPEED);
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (
