@@ -10,6 +10,11 @@ const Model = (
         .texture :: ugli.Texture,
     };
 
+    const PlayerCtx = @context newtype {
+        .position :: Vec3,
+        .radius :: Float32,
+    };
+
     const load = (path :: String) -> Model.t => (
         let text = std.fs.read_file(path + "/model.obj");
         let faces = obj.parse(text);
@@ -73,6 +78,18 @@ const Model = (
             |> ugli.set_uniform(
                 "u_texture",
                 model.texture,
+                draw_state
+            );
+        program
+            |> ugli.set_uniform(
+                "u_player_pos",
+                (@current PlayerCtx).position,
+                draw_state
+            );
+        program
+            |> ugli.set_uniform(
+                "u_player_radius",
+                (@current PlayerCtx).radius,
                 draw_state
             );
         program |> ugli.set_vertex_data_source(model.buffer);

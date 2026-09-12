@@ -167,6 +167,10 @@ const handle_mmo = (self :: &mut Game) => (
         .draw = self => with_return (
             with Assets.Ctx = self^.assets;
             with Model.Renderer.Ctx = self^.model_renderer;
+            with Model.PlayerCtx = {
+                .position = self^.player.position,
+                .radius = self^.player.scale,
+            };
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
                 self^.camera,
                 .framebuffer_size = geng.get_window_size(),
@@ -175,8 +179,13 @@ const handle_mmo = (self :: &mut Game) => (
             for level_model in &self^.assets.models.level |> ArrayList.iter do (
                 Model.draw(level_model^.model, Mat4.IDENTITY);
             );
-            Model.draw(self^.assets.models.skins.[1], Mat4.translate({ 10, 0, 1 }));
-            Entity.draw(&self^.player, .jetpack = self^.jetpack_enabled);
+            (
+                with Model.PlayerCtx = {
+                    .position = self^.player.position,
+                    .radius = 0,
+                };
+                Entity.draw(&self^.player, .jetpack = self^.jetpack_enabled);
+            );
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
