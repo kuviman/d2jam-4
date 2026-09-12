@@ -87,7 +87,7 @@ const reset_player = (.skin) -> Entity => {
 };
 
 const restart = (self :: &mut Game) => (
-    self^.player = reset_player();
+    self^.player = reset_player(.skin = self^.player.skin);
 );
 
 const handle_mmo = (self :: &mut Game) => (

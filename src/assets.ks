@@ -135,6 +135,7 @@ const Assets = (
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/logs"));
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/rock"));
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/sand"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/ice"));
                 list
             ),
             .jetpack = Model.load("assets/models/jetpack"),
