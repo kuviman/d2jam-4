@@ -1,6 +1,7 @@
 use (import "./lib/_lib.ks").*;
 use (import "./model.ks").*;
 const collisions = import "./collisions.ks";
+const json = import "./json.ks";
 
 module:
 
@@ -41,6 +42,7 @@ const Assets = (
         .collision_mesh :: collisions.Mesh,
         .model :: Model.t,
         .sfx :: geng.audio.Buffer,
+        .properties :: collisions.MeshProperties,
     };
 
     impl LevelModel as module = (
@@ -68,6 +70,12 @@ const Assets = (
                 .collision_mesh = collisions.Mesh.new(collision_mesh),
                 .model = Model.load(path),
                 .sfx = geng.audio.load(path + "/sfx.wav"),
+                .properties = (
+                    let source = std.fs.read_file(path + "/properties.json");
+                    let value = json.parse(&mut json.Reader.create(&source))
+                        |> Result.unwrap;
+                    include_ast json.parse_value(`(value), collisions.MeshProperties)
+                ),
             }
         );
     );

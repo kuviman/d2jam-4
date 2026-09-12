@@ -178,6 +178,11 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
     )
 );
 
+const MeshProperties = newtype {
+    .bounciness :: Float32,
+    .friction :: Float32,
+};
+
 const CollisionResult = newtype {
     .velocity_along_normal :: Float32,
 };
@@ -189,8 +194,9 @@ const collide_and_react = (
     .radius_change_speed :: Float32,
     .radius :: Float32,
     .mesh :: &Mesh,
+    .properties :: &MeshProperties,
 ) -> Option.t[CollisionResult] => (
-    let bounciness = 0.1;
+    let bounciness = properties^.bounciness;
     let jump_modifier = 4;
     if collide({ .position = position^, .radius }, mesh) is :Some collision then (
         position^ = Vec3.add(
@@ -209,7 +215,7 @@ const collide_and_react = (
             angular_velocity^,
             Vec3.div(Vec3.cross(velocity^, collision.normal), radius),
         );
-        let friction = 0.5;
+        let friction = properties^.friction;
         let angular_impulse = Vec3.mul(
             relative_angular_velocity,
             -min(1, max(0, -velocity_along_normal) * friction),

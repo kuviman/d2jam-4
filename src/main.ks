@@ -345,6 +345,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .radius_change_speed = scale_speed,
                     .radius = self^.player.scale,
                     .mesh = &level_model^.collision_mesh,
+                    .properties = &level_model^.properties,
                 ) is :Some collision then (
                     if type_index == 1 then (
                         restart(self);
