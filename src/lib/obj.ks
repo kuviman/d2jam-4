@@ -1,4 +1,5 @@
 use (import "./la/_lib.ks").*;
+use (import "./common.ks").*;
 const ugli = import "./ugli/_lib.ks";
 
 module:
@@ -57,7 +58,10 @@ const parse = (s :: String) -> ArrayList.t[Face] => (
             .a_normal = vns.[vn - 1],
         }
     );
+    let mut i = 0;
     for line in s |> String.lines do (
+        if i % 1000 == 0 then yield();
+        i += 1;
         if line |> strip_prefix("v ") is :Some (s) then (
             let { x, yz } = s |> String.split_once(' ');
             let { y, z } = yz |> String.split_once(' ');

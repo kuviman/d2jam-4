@@ -12,7 +12,7 @@ build-native:
         -pthread \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \
-        -g -O3 \
+        -g -O0 \
         -o target/compiled/main.exe \
         target/compiled/main.c \
         -fsanitize=address,leak,undefined \
@@ -58,7 +58,6 @@ build-emscripten source="target/compiled/main.c":
         -s ASYNCIFY \
         -s ASYNCIFY_STACK_SIZE=64MB \
         -w
-    # -s ALLOW_MEMORY_GROWTH \
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
     # -sMAX_WEBGL_VERSION=2 \
 

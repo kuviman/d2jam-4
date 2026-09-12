@@ -188,15 +188,12 @@ impl Font as module = (
     const draw = (
         font :: &Font,
         text :: String,
-        .pos :: Vec2,
-        .size :: Float32,
+        .matrix :: Mat4,
         .color :: Vec4,
         .align :: Float32,
     ) => (
-        panic("TODO DRAW FONT");
-        (#
         let ctx = (@current geng.Context);
-        let camera = (@current geng.CameraCtx);
+        let camera = (@current geng.CameraUniforms.Ctx);
         let program = font^.program;
         program |> ugli.Program.@"use";
 
@@ -207,16 +204,16 @@ impl Font as module = (
 
         program |> ugli.set_uniform("u_view_matrix", camera.view_matrix, draw_state);
         program |> ugli.set_uniform("u_projection_matrix", camera.projection_matrix, draw_state);
+        program |> ugli.set_uniform("u_model_matrix", matrix, draw_state);
         program |> ugli.set_uniform("u_texture", font^.texture, draw_state);
         program |> ugli.set_uniform("u_color", color, draw_state);
 
         let tile_size = font^.config.tile_size;
-        let single_char_size = Vec2.mul({ tile_size.0 / tile_size.1, 1 }, size);
-        program |> ugli.set_uniform("u_size", single_char_size, draw_state);
-        let mut pos :: Vec2 = { pos.0 - measure(font, text) * align * size, pos.1 };
+        let single_char_size :: Vec2 = { tile_size.0 / tile_size.1, 1 };
+        let mut pos :: Vec2 = { -measure(font, text) * align, 0 };
         for c in text |> String.iter do (
             if c == ' ' then (
-                pos.0 += font^.unit_space_size * size;
+                pos.0 += font^.unit_space_size;
                 continue;
             );
             match &font^.chars |> OrdMap.get(c) with (
@@ -231,6 +228,5 @@ impl Font as module = (
 
             pos.0 += single_char_size.0;
         );
-        #)
     );
 );

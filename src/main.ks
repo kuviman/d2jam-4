@@ -95,6 +95,7 @@ const reset_player = (.skin) -> Entity => {
 
 const restart = (self :: &mut Game) => (
     self^.player = reset_player(.skin = self^.player.skin);
+    self^.timer = :WaitForMove;
 );
 
 const handle_mmo = (self :: &mut Game) => (
@@ -210,6 +211,75 @@ const handle_mmo = (self :: &mut Game) => (
                 OtherPlayer.draw(other_player);
             );
             Model.draw(self^.water, Mat4.IDENTITY);
+
+            let height = 12;
+            let distance = 8;
+            font.Font.draw(
+                &self^.assets.font,
+                "WASD to ROLL",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                "R to RESTART",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(10))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                "F to CHEAT",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(10))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                "Space to SCALE",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(-170))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+
+            with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
+                {
+                    .position = { 0, 0, 0 },
+                    .rotation = Angle.from_degrees(90),
+                    .attack = Angle.from_degrees(90),
+                    .fov = Angle.from_degrees(90),
+                    .distance = 10,
+                },
+                .framebuffer_size = geng.get_window_size(),
+            );
+            if self^.timer is :Working t then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    (
+                        let seconds :: Int32 = @native "\(t)";
+                        let minutes = seconds / 60;
+                        let seconds = seconds % 60;
+                        to_string(minutes)
+                        + ":"
+                        + to_string(seconds / 10)
+                        + to_string(seconds % 10)
+                    ),
+                    .matrix = Mat4.translate({ 0, 7, 0})
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.scale_uniform(2)),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+            );
         ),
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);

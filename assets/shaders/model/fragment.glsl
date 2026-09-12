@@ -1,6 +1,8 @@
 varying vec2 v_uv;
 varying vec3 v_normal;
+varying vec3 v_camera_normal;
 varying vec3 v_world_pos;
+varying vec3 v_camera_pos;
 
 uniform sampler2D u_texture;
 
@@ -34,4 +36,16 @@ void main() {
     vec4 light_color = vec4(vec3(light_k), 1.0);
     gl_FragColor = texture2D(u_texture, v_uv) * light_color;
     gl_FragColor = lerp(gl_FragColor, vec4(1.0), hightlight);
+    gl_FragColor = lerp(
+        gl_FragColor,
+        vec4(0.8, 0.8, 1.0, 1.0),
+        pow(clamp(-v_camera_pos.z / 200.0, 0.0, 1.0), 2.0)
+    );
+    // float verticality = 0.9;
+    // float K = 0.1 * max(v_camera_normal.z - verticality, 0.0) / (1.0 - verticality);
+    // K = step(cross(normalize(v_camera_normal), normalize(v_camera_pos)).y, 0) * 0.5;
+    // gl_FragColor.xyz *= 1.0 - K;
+    // gl_FragColor.xyz = v_camera_normal * 0.5 + 0.5;
+    // float k = 1.0 - K + sin(v_world_pos.z * 10.0) * K;
+    // gl_FragColor.xyz *= k;
 }
