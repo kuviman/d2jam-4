@@ -113,7 +113,7 @@ const handle_mmo = (self :: &mut Game) => (
             @native "glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)";
             let assets = Assets.load();
             let water = (
-                let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 100);
+                let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 1000);
                 let mut vs = ArrayList.new();
                 for (_ :: Int32) in 0..4 do (
                     &mut vs |> ArrayList.push_back(v);
@@ -121,7 +121,7 @@ const handle_mmo = (self :: &mut Game) => (
                 );
                 let vertex = i => {
                     .a_pos = { ...vs.[i], 0 },
-                    .a_uv = vs.[i],
+                    .a_uv = Vec2.mul(vs.[i], 0.3),
                     .a_normal = { 0, 0, 1 },
                 };
                 let mut data = ArrayList.new();
@@ -181,6 +181,7 @@ const handle_mmo = (self :: &mut Game) => (
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
+            let mut max_speed = MAX_SPEED;
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
                 wasd.0 += 1;
@@ -221,14 +222,24 @@ const handle_mmo = (self :: &mut Game) => (
                     ),
                 );
             ) else (
-                let gravity = 50;
-                let water_force = 20;
                 if self^.player.position.2 < 0 then (
-                    self^.player.velocity.2 = min(
-                        self^.player.velocity.2 + water_force * delta_time,
+                    let water_force = 5;
+                    let target_velocity :: Vec3 = {
+                        ...Vec2.rotate(
+                            Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                            self^.camera.rotation,
+                        ),
                         player_speed,
+                    };
+                    self^.player.velocity = Vec3.add(
+                        self^.player.velocity,
+                        Vec3.mul(
+                            Vec3.sub(target_velocity, self^.player.velocity),
+                            min(water_force * delta_time, 1),
+                        ),
                     );
                 ) else (
+                    let gravity = 50;
                     self^.player.velocity.2 -= gravity * delta_time;
                 );
             );
@@ -287,7 +298,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .mesh = &level_model^.collision_mesh,
                 );
             );
-            self^.player.velocity = Vec3.clamp_len(self^.player.velocity, MAX_SPEED);
+            self^.player.velocity = Vec3.clamp_len(self^.player.velocity, max_speed);
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (
