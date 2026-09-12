@@ -20,7 +20,7 @@ const init = () -> ContextT => (
 
 const PlayOptions = newtype {
     .@"loop" :: Bool,
-    .gain :: Float32,
+    .volume :: Float32,
 };
 
 impl PlayOptions as module = (
@@ -28,15 +28,31 @@ impl PlayOptions as module = (
 
     const default = () -> PlayOptions => {
         .@"loop" = false,
-        .gain = 1,
+        .volume = 1,
     };
 );
 
-const play_with = (buffer :: Buffer, options :: PlayOptions) -> () => (
+const Effect = newtype {
+    .track :: SDL.MIX.Track,
+};
+
+impl Effect as module = (
+    module:
+
+    const stop = (effect :: Effect) => (
+        SDL.MIX.StopTrack(effect.track, 0);
+    );
+
+    const set_volume = (effect :: Effect, volume :: Float32) => (
+        SDL.MIX.SetTrackGain(effect.track, volume);
+    );
+);
+
+const play_with = (buffer :: Buffer, options :: PlayOptions) -> Effect => (
     let ctx = (@current Context);
     let track = SDL.MIX.CreateTrack(ctx.mixer);
     SDL.MIX.SetTrackAudio(track, buffer.audio);
-    SDL.MIX.SetTrackGain(track, options.gain);
+    SDL.MIX.SetTrackGain(track, options.volume);
     # This one doesnt work
     # SDL.MIX.SetTrackLoops(track, if options.@"loop" then (-1) else 0);
     let props = SDL.CreateProperties();
@@ -45,9 +61,10 @@ const play_with = (buffer :: Buffer, options :: PlayOptions) -> () => (
     );
     SDL.MIX.PlayTrack(track, props);
     SDL.DestroyProperties(props);
+    { .track }
 );
 
-const play = (buffer :: Buffer) => (
+const play = (buffer :: Buffer) -> Effect => (
     play_with(buffer, PlayOptions.default())
 );
 

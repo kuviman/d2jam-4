@@ -259,6 +259,12 @@ const MIX = (
         );
     );
 
+    const StopTrack = (track :: Track, fade_out_frames :: Int64) => (
+        if @native "!MIX_StopTrack(\(track), \(fade_out_frames))" then (
+            throw_error("MIX_StopTrack");
+        );
+    );
+
     const DestroyTrack = (track :: Track) => (
         @native "MIX_DestroyTrack(\(track))";
     );

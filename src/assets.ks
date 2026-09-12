@@ -23,9 +23,10 @@ const Assets = (
     };
 
     const Sfx = newtype {
-        .jump :: geng.audio.Buffer,
-        .hit :: geng.audio.Buffer,
-        .pickup_star :: geng.audio.Buffer,
+        .deflation :: geng.audio.Buffer,
+        .inflation :: geng.audio.Buffer,
+        .jetpack :: geng.audio.Buffer,
+        .ground :: geng.audio.Buffer,
     };
 
     const Textures = newtype {
@@ -39,6 +40,7 @@ const Assets = (
     const LevelModel = newtype {
         .collision_mesh :: collisions.Mesh,
         .model :: Model.t,
+        .sfx :: geng.audio.Buffer,
     };
 
     impl LevelModel as module = (
@@ -65,6 +67,7 @@ const Assets = (
             {
                 .collision_mesh = collisions.Mesh.new(collision_mesh),
                 .model = Model.load(path),
+                .sfx = geng.audio.load(path + "/sfx.wav"),
             }
         );
     );
@@ -86,9 +89,10 @@ const Assets = (
         },
     );
     #) let sfx = {
-            .jump = geng.audio.load("assets/sfx/jump.wav"),
-            .hit = geng.audio.load("assets/sfx/hit.wav"),
-            .pickup_star = geng.audio.load("assets/sfx/pickup_star.wav"),
+            .deflation = geng.audio.load("assets/sfx/deflation.wav"),
+            .inflation = geng.audio.load("assets/sfx/inflation.wav"),
+            .jetpack = geng.audio.load("assets/sfx/jetpack.wav"),
+            .ground = geng.audio.load("assets/sfx/ground.wav"),
         };
         let font = font.Font.load("assets/font");
 

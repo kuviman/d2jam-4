@@ -72,6 +72,8 @@ const Game = newtype {
     .player :: Entity,
     .other_players :: OrdMap.t[interop.Id, OtherPlayer],
     .jetpack_enabled :: Bool,
+    .jetpack_sfx :: geng.audio.Effect,
+    .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
 };
 
 const handle_mmo = (self :: &mut Game) => (
@@ -158,6 +160,8 @@ const handle_mmo = (self :: &mut Game) => (
                 },
                 .other_players = OrdMap.new(),
                 .jetpack_enabled = false,
+                .flate_sfx = :None,
+                .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
             }
         ),
         .draw = self => with_return (
@@ -181,6 +185,7 @@ const handle_mmo = (self :: &mut Game) => (
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
+            geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 1 else 0);
             let mut max_speed = MAX_SPEED;
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
@@ -244,11 +249,38 @@ const handle_mmo = (self :: &mut Game) => (
                 );
             );
 
-            let scale_speed :: Float32 = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
-                if self^.player.scale < MAX_SCALE then 1 else 0
+            let scale_dir = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
+                if self^.player.scale < MAX_SCALE then (
+                    1
+                ) else 0
             ) else (
-                if self^.player.scale > MIN_SCALE then -1 else 0
+                if self^.player.scale > MIN_SCALE then (
+                    -1
+                ) else 0
             );
+            if scale_dir != 0 then (
+                let play = if self^.flate_sfx is :Some { sfx, .dir = cur_dir } then (
+                    if cur_dir != scale_dir then (
+                        geng.audio.Effect.stop(sfx);
+                        true
+                    ) else (
+                        false
+                    )
+                ) else true;
+                if play then (
+                    let sfx = geng.audio.play_with(
+                        if scale_dir > 0 then self^.assets.sfx.inflation else self^.assets.sfx.deflation,
+                        { .volume =
+                            if scale_dir > 0 then 1 else (
+                                (self^.player.scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)
+                            ),
+                            .@"loop" = false,
+                        },
+                    );
+                    self^.flate_sfx = :Some { sfx, .dir = scale_dir };
+                );
+            );
+            let scale_speed = Int32_to_Float32(scale_dir);
             let scale_time = 0.2;
             let scale_speed = scale_speed / scale_time;
             self^.player.scale = clamp(
@@ -289,13 +321,21 @@ const handle_mmo = (self :: &mut Game) => (
                 Vec3.mul(self^.player.velocity, delta_time),
             );
             for level_model in &self^.assets.models.level |> ArrayList.iter do (
-                collisions.collide_and_react(
+                if collisions.collide_and_react(
                     .position = &mut self^.player.position,
                     .velocity = &mut self^.player.velocity,
                     .angular_velocity = &mut self^.player.angular_velocity,
                     .radius_change_speed = scale_speed,
                     .radius = self^.player.scale,
                     .mesh = &level_model^.collision_mesh,
+                ) is :Some collision then (
+                    let volume = abs(collision.velocity_along_normal) / MAX_SPEED;
+                    if volume > 0.1 then (
+                        geng.audio.play_with(
+                            level_model^.sfx,
+                            { .volume, .@"loop" = false },
+                        );
+                    );
                 );
             );
             self^.player.velocity = Vec3.clamp_len(self^.player.velocity, max_speed);
