@@ -94,7 +94,7 @@ const Assets = (
             music,
             {
                 .@"loop" = true,
-                .volume = 0.5,
+                .volume = 0.25,
             },
         );
         let sfx = {
