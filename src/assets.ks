@@ -28,6 +28,7 @@ const Assets = (
         .inflation :: geng.audio.Buffer,
         .jetpack :: geng.audio.Buffer,
         .ground :: geng.audio.Buffer,
+        .splash :: geng.audio.Buffer,
     };
 
     const Textures = newtype {
@@ -101,6 +102,7 @@ const Assets = (
             .inflation = geng.audio.load("assets/sfx/inflation.wav"),
             .jetpack = geng.audio.load("assets/sfx/jetpack.wav"),
             .ground = geng.audio.load("assets/sfx/ground.wav"),
+            .splash = geng.audio.load("assets/sfx/splash.wav"),
         };
         let font = font.Font.load("assets/font");
 

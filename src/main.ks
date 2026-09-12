@@ -485,9 +485,20 @@ const handle_mmo = (self :: &mut Game) => (
                 )
             )
                 |> Quat.normalize;
+            let old_z = self^.player.position.2;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
+            );
+            let new_z = self^.player.position.2;
+            if old_z >= 0 and new_z < 0 or old_z < 0 and new_z >= 0 then (
+                let volume = min(abs(self^.player.velocity.2) / player_speed, 1);
+                if volume > 0.1 then (
+                    geng.audio.play_with(
+                        self^.assets.sfx.splash,
+                        { .volume, .@"loop" = false },
+                    );
+                );
             );
             for { type_index, level_model } in (
                 &self^.assets.models.level
