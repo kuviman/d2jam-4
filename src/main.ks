@@ -64,6 +64,12 @@ impl OtherPlayer as module = (
     );
 );
 
+const TimerState = newtype (
+    | :WaitForMove
+    | :Working Float32
+    | :Disabled
+);
+
 const Game = newtype {
     .camera :: geng.Camera,
     .assets :: Assets.t,
@@ -74,6 +80,7 @@ const Game = newtype {
     .jetpack_enabled :: Bool,
     .jetpack_sfx :: geng.audio.Effect,
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
+    .timer :: TimerState,
 };
 
 const reset_player = (.skin) -> Entity => {
@@ -168,6 +175,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .jetpack_enabled = false,
                 .flate_sfx = :None,
                 .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
+                .timer = :WaitForMove,
             }
         ),
         .draw = self => with_return (
@@ -199,9 +207,15 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
+            if self^.timer is :Working ref time then (
+                time^ += delta_time;
+            );
             # handle_mmo(self);
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 1 else 0);
             let mut max_speed = MAX_SPEED;
+            if self^.jetpack_enabled then (
+                self^.timer = :Disabled;
+            );
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
                 wasd.0 += 1;
@@ -214,6 +228,11 @@ const handle_mmo = (self :: &mut Game) => (
             );
             if geng.input.Key.is_pressed(:D) or geng.input.Key.is_pressed(:ArrowRight) then (
                 wasd.1 -= 1;
+            );
+            if Vec2.length(wasd) > 0.1 then (
+                if self^.timer is :WaitForMove then (
+                    self^.timer = :Working 0;
+                );
             );
             let player_speed = 15;
             let player_acceleration = 20;
