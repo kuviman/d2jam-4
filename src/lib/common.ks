@@ -21,6 +21,16 @@ const is_emscripten = () -> Bool => @native ''
     #endif
 '';
 
+const yield = () => (
+    @native ''
+        #ifdef __EMSCRIPTEN__
+            emscripten_sleep(0)
+        #else
+            (Unit){}
+        #endif
+    '';
+);
+
 const fetch_string = (path :: String) -> String => (
     std.fs.read_file(path)
 );

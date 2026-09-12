@@ -373,6 +373,9 @@ const handle_mmo = (self :: &mut Game) => (
                 | :KeyPress :Enter => (
                     self^.player.skin = (self^.player.skin + 1) % ArrayList.length(&self^.assets.models.skins);
                 )
+                | :MousePress _ => (
+                    SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
+                )
                 | :MouseMove { .delta, ... } => (
                     let degree_per_pixel :: Float32 = 360 / 2000;
                     self^.camera.rotation = Angle.sub(

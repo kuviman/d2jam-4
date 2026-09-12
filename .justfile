@@ -54,11 +54,12 @@ build-emscripten source="target/compiled/main.c":
         --use-preload-plugins \
         --preload-file assets \
         -s TOTAL_STACK=64MB \
-        -s INITIAL_MEMORY=128MB \
-        -s ALLOW_MEMORY_GROWTH \
+        -s INITIAL_MEMORY=512MB \
         -s ASSERTIONS \
         -s ASYNCIFY \
+        -s ASYNCIFY_STACK_SIZE=64MB \
         -w
+    # -s ALLOW_MEMORY_GROWTH \
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
     # -sMAX_WEBGL_VERSION=2 \
 

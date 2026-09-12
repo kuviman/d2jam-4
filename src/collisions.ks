@@ -96,6 +96,7 @@ impl Mesh as module = (
                 let chunk = &mut chunks |> OrdMap.get_or_init(co, Chunk.new);
                 &mut chunk^.faces |> ArrayList.push_back(face);
             );
+            yield();
         );
         { .faces, .chunks }
     );
