@@ -144,7 +144,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .jetpack_enabled = false,
             }
         ),
-        .draw = self => (
+        .draw = self => with_return (
             with Assets.Ctx = self^.assets;
             with Model.Renderer.Ctx = self^.model_renderer;
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
@@ -160,7 +160,7 @@ const handle_mmo = (self :: &mut Game) => (
             );
             Model.draw(self^.water, Mat4.IDENTITY);
         ),
-        .update = (self, delta_time) => (
+        .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };

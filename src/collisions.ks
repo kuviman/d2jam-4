@@ -18,15 +18,86 @@ const Face = newtype {
     .normal :: Vec3,
 };
 
-const Mesh = newtype {
+const ChunkCoord = newtype { Int32, Int32, Int32 };
+
+impl ChunkCoord as std.cmp.Ord = {
+    .compare = (a, b) => with_return (
+        match std.cmp.default_compare(a.0, b.0) with (
+            | :Equal => ()
+            | other => return other
+        );
+        match std.cmp.default_compare(a.1, b.1) with (
+            | :Equal => ()
+            | other => return other
+        );
+        match std.cmp.default_compare(a.2, b.2) with (
+            | :Equal => ()
+            | other => return other
+        );
+        :Equal
+    ),
+};
+
+const Chunk = newtype {
     .faces :: ArrayList.t[Face],
 };
+
+const CHUNK_SIZE :: Float32 = 10;
+
+impl Chunk as module = (
+    module:
+
+    const new = () -> Chunk => {
+        .faces = ArrayList.new(),
+    };
+);
+
+const Mesh = newtype {
+    .faces :: ArrayList.t[Face],
+    .chunks :: OrdMap.t[ChunkCoord, Chunk],
+};
+
+const chunk_box = (from :: ChunkCoord, to :: ChunkCoord) -> std.iter.Iterable[ChunkCoord] => {
+    .iter = consumer => (
+        for x in from.0..to.0 do (
+            for y in from.1..to.1 do (
+                for z in from.2..to.2 do (
+                    consumer({ x, y, z });
+                );
+            );
+        );
+    ),
+};
+
+const floor = (x :: Float32) -> Int32 => (
+    @native "floorf(\(x))"
+);
+const ceil = (x :: Float32) -> Int32 => (
+    @native "ceilf(\(x))"
+);
 
 impl Mesh as module = (
     module:
 
     const new = (faces :: ArrayList.t[Face]) -> Mesh => (
-        { .faces }
+        let mut chunks = OrdMap.new();
+        for &face in &faces |> ArrayList.iter do (
+            let from = {
+                floor(min(min(face.vs.[0].0, face.vs.[1].0), face.vs.[2].0) / CHUNK_SIZE),
+                floor(min(min(face.vs.[0].1, face.vs.[1].1), face.vs.[2].1) / CHUNK_SIZE),
+                floor(min(min(face.vs.[0].2, face.vs.[1].2), face.vs.[2].2) / CHUNK_SIZE),
+            };
+            let to = {
+                ceil(max(max(face.vs.[0].0, face.vs.[1].0), face.vs.[2].0) / CHUNK_SIZE),
+                ceil(max(max(face.vs.[0].1, face.vs.[1].1), face.vs.[2].1) / CHUNK_SIZE),
+                ceil(max(max(face.vs.[0].2, face.vs.[1].2), face.vs.[2].2) / CHUNK_SIZE),
+            };
+            for co in chunk_box(from, to) do (
+                let chunk = &mut chunks |> OrdMap.get_or_init(co, Chunk.new);
+                &mut chunk^.faces |> ArrayList.push_back(face);
+            );
+        );
+        { .faces, .chunks }
     );
 );
 
@@ -83,8 +154,22 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
         .penetration = -1,
         .normal = { 0, 0, 0 },
     };
-    for face in &mesh^.faces |> ArrayList.iter do (
-        collide_face(&mut result, entity, face);
+    let from = {
+        floor((entity.position.0 - entity.radius) / CHUNK_SIZE),
+        floor((entity.position.1 - entity.radius) / CHUNK_SIZE),
+        floor((entity.position.2 - entity.radius) / CHUNK_SIZE),
+    };
+    let to = {
+        ceil((entity.position.0 + entity.radius) / CHUNK_SIZE),
+        ceil((entity.position.1 + entity.radius) / CHUNK_SIZE),
+        ceil((entity.position.2 + entity.radius) / CHUNK_SIZE),
+    };
+    for co in chunk_box(from, to) do (
+        if &mesh^.chunks |> OrdMap.get(co) is :Some chunk then (
+            for face in &chunk^.faces |> ArrayList.iter do (
+                collide_face(&mut result, entity, face);
+            );
+        );
     );
     if result.penetration <= 0 then (
         :None
