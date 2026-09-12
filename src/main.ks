@@ -13,8 +13,15 @@ const Entity = newtype {
     .position :: Vec3,
     .velocity :: Vec3,
     .rotation :: Quat,
+    .angular_velocity :: Vec3,
     .can_jump :: Bool,
+    .scale :: Float32,
 };
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 2;
+
+const MAX_SPEED = 50;
 
 impl Entity as module = (
     module:
@@ -24,6 +31,7 @@ impl Entity as module = (
         Model.draw(
             assets.models.skins.[entity^.skin],
             Mat4.translate(entity^.position)
+                |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
                 |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation))
         );
     );
@@ -52,7 +60,7 @@ const Game = newtype {
     .camera :: geng.Camera,
     .assets :: Assets.t,
     .model_renderer :: Model.Renderer,
-    .ground :: Model.t,
+    .water :: Model.t,
     .player :: Entity,
     .other_players :: OrdMap.t[interop.Id, OtherPlayer],
     .jetpack_enabled :: Bool,
@@ -93,8 +101,10 @@ const handle_mmo = (self :: &mut Game) => (
     impl Game as geng.App = {
         .init = () => (
             SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
+            @native "glEnable(GL_BLEND)";
+            @native "glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)";
             let assets = Assets.load();
-            let ground = (
+            let water = (
                 let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 100);
                 let mut vs = ArrayList.new();
                 for (_ :: Int32) in 0..4 do (
@@ -114,7 +124,7 @@ const handle_mmo = (self :: &mut Game) => (
                 &mut data |> ArrayList.push_back(vertex(2));
                 &mut data |> ArrayList.push_back(vertex(3));
                 {
-                    .texture = assets.textures.ground,
+                    .texture = assets.textures.water,
                     .buffer = ugli.VertexBuffer.init(&data),
                 }
             );
@@ -127,20 +137,22 @@ const handle_mmo = (self :: &mut Game) => (
                     .fov = Angle.from_degrees(90),
                 },
                 .assets,
-                .ground,
+                .water,
                 .model_renderer = Model.Renderer.init(),
                 .player = {
                     .position = { 0, 0, 10 },
                     .velocity = { 0, 0, 0 },
                     .rotation = Quat.IDENTITY,
+                    .angular_velocity = { 0, 0, 0 },
                     .skin = 0,
                     .can_jump = false,
+                    .scale = 1,
                 },
                 .other_players = OrdMap.new(),
                 .jetpack_enabled = false,
             }
         ),
-        .draw = self => (
+        .draw = self => with_return (
             with Assets.Ctx = self^.assets;
             with Model.Renderer.Ctx = self^.model_renderer;
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
@@ -154,8 +166,9 @@ const handle_mmo = (self :: &mut Game) => (
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
+            Model.draw(self^.water, Mat4.IDENTITY);
         ),
-        .update = (self, delta_time) => (
+        .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
             # handle_mmo(self);
             let mut wasd :: Vec2 = { 0, 0 };
@@ -198,26 +211,58 @@ const handle_mmo = (self :: &mut Game) => (
                     ),
                 );
             ) else (
-                if self^.player.can_jump and geng.input.Key.is_pressed(:Space) then (
-                    self^.player.velocity.2 += 20;
-                );
-                let target_velocity = Vec2.rotate(
-                    Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
-                    self^.camera.rotation,
-                );
-                self^.player.velocity = Vec3.add(
-                    self^.player.velocity,
-                    {
-                        ...Vec2.mul(
-                            Vec2.sub(target_velocity, Vec3.xy(self^.player.velocity)),
-                            min(player_acceleration * delta_time, 1),
-                        ),
-                        0
-                    },
-                );
                 let gravity = 50;
-                self^.player.velocity.2 -= gravity * delta_time;
+                let water_force = 20;
+                if self^.player.position.2 < 0 then (
+                    self^.player.velocity.2 = min(
+                        self^.player.velocity.2 + water_force * delta_time,
+                        player_speed,
+                    );
+                ) else (
+                    self^.player.velocity.2 -= gravity * delta_time;
+                );
             );
+
+            let scale_speed :: Float32 = if geng.input.Key.is_pressed(:Space) then (
+                if self^.player.scale < MAX_SCALE then 1 else 0
+            ) else (
+                if self^.player.scale > MIN_SCALE then -1 else 0
+            );
+            let scale_time = 0.2;
+            let scale_speed = scale_speed / scale_time;
+            self^.player.scale = clamp(
+                self^.player.scale + scale_speed * delta_time,
+                .min = MIN_SCALE,
+                .max = MAX_SCALE,
+            );
+
+            let max_angular_velocity = 10;
+            let target_angular_velocity = Vec3.mul(
+                { ...Vec2.rotate_90(Vec2.rotate(wasd, self^.camera.rotation)), 0 },
+                max_angular_velocity,
+            );
+            let angular_acceleration = 10;
+            self^.player.angular_velocity = Vec3.add(
+                self^.player.angular_velocity,
+                Vec3.mul(
+                    Vec3.sub(target_angular_velocity, self^.player.angular_velocity),
+                    min(angular_acceleration * delta_time, 1),
+                ),
+            );
+            self^.player.rotation = Quat.add(
+                self^.player.rotation,
+                Quat.mul(
+                    Quat.mul_quat(
+                        (
+                            let { i, j, k } = self^.player.angular_velocity;
+                            { .i, .j, .k, .w = 0 }
+                        ),
+                        self^.player.rotation,
+                    ),
+                    delta_time / 2,
+                )
+            )
+                |> Quat.normalize;
             self^.player.position = Vec3.add(
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
@@ -225,20 +270,12 @@ const handle_mmo = (self :: &mut Game) => (
             self^.player.can_jump = collisions.collide_and_react(
                 .position = &mut self^.player.position,
                 .velocity = &mut self^.player.velocity,
-                .radius = 1,
+                .angular_velocity = &mut self^.player.angular_velocity,
+                .radius_change_speed = scale_speed,
+                .radius = self^.player.scale,
                 .mesh = &self^.assets.models.level.collision_mesh,
             );
-            self^.player.rotation = Quat.mul_quat(
-                Quat.from_axis_angle(
-                    {
-                        ...Vec2.rotate_90(Vec3.xy(self^.player.velocity)),
-                        0,
-                    },
-                    Angle.from_degrees(360 * delta_time / player_speed),
-                ),
-                self^.player.rotation,
-            )
-                |> Quat.normalize;
+            self^.player.velocity = Vec3.clamp_len(self^.player.velocity, MAX_SPEED);
             self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (

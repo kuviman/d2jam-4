@@ -46,4 +46,13 @@ impl Vec3 as module = (
     const normalize = (v :: Vec3) -> Vec3 => (
         div(v, length(v))
     );
+
+    const clamp_len = (v :: Vec3, max_length :: Float32) -> Vec3 => (
+        let len = length(v);
+        if len > max_length then (
+            mul(v, len / max_length)
+        ) else (
+            v
+        )
+    );
 );

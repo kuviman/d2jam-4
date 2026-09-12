@@ -1,4 +1,5 @@
 use (import "./lib/la/_lib.ks").*;
+use (import "./lib/common.ks").*;
 
 module:
 
@@ -17,13 +18,87 @@ const Face = newtype {
     .normal :: Vec3,
 };
 
-const Mesh = newtype {
+const ChunkCoord = newtype { Int32, Int32, Int32 };
+
+impl ChunkCoord as std.cmp.Ord = {
+    .compare = (a, b) => with_return (
+        match std.cmp.default_compare(a.0, b.0) with (
+            | :Equal => ()
+            | other => return other
+        );
+        match std.cmp.default_compare(a.1, b.1) with (
+            | :Equal => ()
+            | other => return other
+        );
+        match std.cmp.default_compare(a.2, b.2) with (
+            | :Equal => ()
+            | other => return other
+        );
+        :Equal
+    ),
+};
+
+const Chunk = newtype {
     .faces :: ArrayList.t[Face],
 };
 
+const CHUNK_SIZE :: Float32 = 10;
+
+impl Chunk as module = (
+    module:
+
+    const new = () -> Chunk => {
+        .faces = ArrayList.new(),
+    };
+);
+
+const Mesh = newtype {
+    .faces :: ArrayList.t[Face],
+    .chunks :: OrdMap.t[ChunkCoord, Chunk],
+};
+
+const chunk_box = (from :: ChunkCoord, to :: ChunkCoord) -> std.iter.Iterable[ChunkCoord] => {
+    .iter = consumer => (
+        for x in from.0..to.0 do (
+            for y in from.1..to.1 do (
+                for z in from.2..to.2 do (
+                    consumer({ x, y, z });
+                );
+            );
+        );
+    ),
+};
+
+const floor = (x :: Float32) -> Int32 => (
+    @native "floorf(\(x))"
+);
+const ceil = (x :: Float32) -> Int32 => (
+    @native "ceilf(\(x))"
+);
+
 impl Mesh as module = (
     module:
-    ()
+
+    const new = (faces :: ArrayList.t[Face]) -> Mesh => (
+        let mut chunks = OrdMap.new();
+        for &face in &faces |> ArrayList.iter do (
+            let from = {
+                floor(min(min(face.vs.[0].0, face.vs.[1].0), face.vs.[2].0) / CHUNK_SIZE),
+                floor(min(min(face.vs.[0].1, face.vs.[1].1), face.vs.[2].1) / CHUNK_SIZE),
+                floor(min(min(face.vs.[0].2, face.vs.[1].2), face.vs.[2].2) / CHUNK_SIZE),
+            };
+            let to = {
+                ceil(max(max(face.vs.[0].0, face.vs.[1].0), face.vs.[2].0) / CHUNK_SIZE),
+                ceil(max(max(face.vs.[0].1, face.vs.[1].1), face.vs.[2].1) / CHUNK_SIZE),
+                ceil(max(max(face.vs.[0].2, face.vs.[1].2), face.vs.[2].2) / CHUNK_SIZE),
+            };
+            for co in chunk_box(from, to) do (
+                let chunk = &mut chunks |> OrdMap.get_or_init(co, Chunk.new);
+                &mut chunk^.faces |> ArrayList.push_back(face);
+            );
+        );
+        { .faces, .chunks }
+    );
 );
 
 const update = (result :: &mut Collision, collision :: Collision) => (
@@ -79,8 +154,22 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
         .penetration = -1,
         .normal = { 0, 0, 0 },
     };
-    for face in &mesh^.faces |> ArrayList.iter do (
-        collide_face(&mut result, entity, face);
+    let from = {
+        floor((entity.position.0 - entity.radius) / CHUNK_SIZE),
+        floor((entity.position.1 - entity.radius) / CHUNK_SIZE),
+        floor((entity.position.2 - entity.radius) / CHUNK_SIZE),
+    };
+    let to = {
+        ceil((entity.position.0 + entity.radius) / CHUNK_SIZE),
+        ceil((entity.position.1 + entity.radius) / CHUNK_SIZE),
+        ceil((entity.position.2 + entity.radius) / CHUNK_SIZE),
+    };
+    for co in chunk_box(from, to) do (
+        if &mesh^.chunks |> OrdMap.get(co) is :Some chunk then (
+            for face in &chunk^.faces |> ArrayList.iter do (
+                collide_face(&mut result, entity, face);
+            );
+        );
     );
     if result.penetration <= 0 then (
         :None
@@ -92,22 +181,40 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
 const collide_and_react = (
     .position :: &mut Vec3,
     .velocity :: &mut Vec3,
+    .angular_velocity :: &mut Vec3,
+    .radius_change_speed :: Float32,
     .radius :: Float32,
     .mesh :: &Mesh,
 ) -> Bool => (
-    let bounciness = 0.5;
+    let bounciness = 0.1;
+    let jump_modifier = 4;
     if collide({ .position = position^, .radius }, mesh) is :Some collision then (
         position^ = Vec3.add(
             position^,
             Vec3.mul(collision.normal, collision.penetration),
         );
-        let velocity_along_normal = Vec3.dot(velocity^, collision.normal);
+        let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
+            - radius_change_speed * jump_modifier;
         if velocity_along_normal < 0 then (
             velocity^ = Vec3.add(
                 velocity^,
                 Vec3.mul(collision.normal, -(1 + bounciness) * velocity_along_normal),
             );
         );
+        let relative_angular_velocity = Vec3.add(
+            angular_velocity^,
+            Vec3.div(Vec3.cross(velocity^, collision.normal), radius),
+        );
+        let friction = 0.5;
+        let angular_impulse = Vec3.mul(
+            relative_angular_velocity,
+            -min(1, max(0, -velocity_along_normal) * friction),
+        );
+        velocity^ = Vec3.sub(
+            velocity^,
+            Vec3.cross(angular_impulse, collision.normal),
+        );
+        angular_velocity^ = Vec3.add(angular_velocity^, angular_impulse);
         true
     ) else (
         false
