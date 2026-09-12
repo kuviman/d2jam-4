@@ -83,6 +83,7 @@ const Assets = (
     const Models = newtype {
         .skins :: ArrayList.t[Model.t],
         .level :: ArrayList.t[LevelModel],
+        .level_nocollisions :: ArrayList.t[Model.t],
         .jetpack :: Model.t,
     };
 
@@ -144,6 +145,14 @@ const Assets = (
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/rock"));
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/sand"));
                 &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/ice"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/metal"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/trampoline"));
+                &mut list |> ArrayList.push_back(LevelModel.load("assets/models/level/mushroom"));
+                list
+            ),
+            .level_nocollisions = (
+                let mut list = ArrayList.new();
+                &mut list |> ArrayList.push_back(Model.load("assets/models/level/nocollisions/leaves"));
                 list
             ),
             .jetpack = Model.load("assets/models/jetpack"),

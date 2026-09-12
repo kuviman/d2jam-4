@@ -81,7 +81,10 @@ impl Mesh as module = (
 
     const new = (faces :: ArrayList.t[Face]) -> Mesh => (
         let mut chunks = OrdMap.new();
+        let mut i = 0;
         for &face in &faces |> ArrayList.iter do (
+            if i % 1000 == 0 then yield();
+            i += 1;
             let from = {
                 floor(min(min(face.vs.[0].0, face.vs.[1].0), face.vs.[2].0) / CHUNK_SIZE),
                 floor(min(min(face.vs.[0].1, face.vs.[1].1), face.vs.[2].1) / CHUNK_SIZE),
@@ -96,7 +99,6 @@ impl Mesh as module = (
                 let chunk = &mut chunks |> OrdMap.get_or_init(co, Chunk.new);
                 &mut chunk^.faces |> ArrayList.push_back(face);
             );
-            yield();
         );
         { .faces, .chunks }
     );
@@ -205,7 +207,7 @@ const collide_and_react = (
             Vec3.mul(collision.normal, collision.penetration),
         );
         let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
-            - radius_change_speed * jump_modifier;
+        - radius_change_speed * jump_modifier;
         let bounce_rel_vel = Vec3.dot(velocity^, collision.normal);
         if bounce_rel_vel < 0 then (
             velocity^ = Vec3.add(
@@ -215,7 +217,7 @@ const collide_and_react = (
         );
         (
             let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
-                - radius_change_speed * jump_modifier;
+            - radius_change_speed * jump_modifier;
             if velocity_along_normal < 0 then (
                 velocity^ = Vec3.add(
                     velocity^,

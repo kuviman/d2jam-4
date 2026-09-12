@@ -193,6 +193,9 @@ const handle_mmo = (self :: &mut Game) => (
             for level_model in &self^.assets.models.level |> ArrayList.iter do (
                 Model.draw(level_model^.model, Mat4.IDENTITY);
             );
+            for &model in &self^.assets.models.level_nocollisions |> ArrayList.iter do (
+                Model.draw(model, Mat4.IDENTITY);
+            );
             (
                 with Model.PlayerCtx = {
                     .position = self^.player.position,
@@ -278,6 +281,21 @@ const handle_mmo = (self :: &mut Game) => (
                         ),
                     );
                 ) else (
+                    let target_velocity :: Vec3 = {
+                        ...Vec2.rotate(
+                            Vec2.mul(Vec2.normalize_or_zero(wasd), player_speed),
+                            self^.camera.rotation,
+                        ),
+                        self^.player.velocity.2,
+                    };
+                    let air_control = 0.5;
+                    self^.player.velocity = Vec3.add(
+                        self^.player.velocity,
+                        Vec3.mul(
+                            Vec3.sub(target_velocity, self^.player.velocity),
+                            min(air_control * delta_time, 1),
+                        ),
+                    );
                     let gravity = 50;
                     self^.player.velocity.2 -= gravity * delta_time;
                 );

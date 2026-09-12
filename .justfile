@@ -12,7 +12,7 @@ build-native:
         -pthread \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \
-        -g -O0 \
+        -g -O3 \
         -o target/compiled/main.exe \
         target/compiled/main.c \
         -fsanitize=address,leak,undefined \
@@ -50,7 +50,6 @@ build-emscripten source="target/compiled/main.c":
         -L ${SDL3_MIXER_WEB}/lib \
         -l SDL3_mixer \
         -O0 \
-        -g -gsource-map \
         --use-preload-plugins \
         --preload-file assets \
         -s TOTAL_STACK=64MB \
