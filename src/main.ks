@@ -76,6 +76,20 @@ const Game = newtype {
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
 };
 
+const reset_player = (.skin) -> Entity => {
+    .position = { 0, 0, 10 },
+    .velocity = { 0, 0, 0 },
+    .rotation = Quat.IDENTITY,
+    .angular_velocity = { 0, 0, 0 },
+    .skin,
+    .can_jump = false,
+    .scale = 1,
+};
+
+const restart = (self :: &mut Game) => (
+    self^.player = reset_player();
+);
+
 const handle_mmo = (self :: &mut Game) => (
     while client.poll_message() is :Some msg do (
         match msg with (
@@ -149,15 +163,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .assets,
                 .water,
                 .model_renderer = Model.Renderer.init(),
-                .player = {
-                    .position = { 0, 0, 10 },
-                    .velocity = { 0, 0, 0 },
-                    .rotation = Quat.IDENTITY,
-                    .angular_velocity = { 0, 0, 0 },
-                    .skin = 0,
-                    .can_jump = false,
-                    .scale = 1,
-                },
+                .player = reset_player(.skin = 0),
                 .other_players = OrdMap.new(),
                 .jetpack_enabled = false,
                 .flate_sfx = :None,
@@ -327,7 +333,11 @@ const handle_mmo = (self :: &mut Game) => (
                 self^.player.position,
                 Vec3.mul(self^.player.velocity, delta_time),
             );
-            for level_model in &self^.assets.models.level |> ArrayList.iter do (
+            for { type_index, level_model } in (
+                &self^.assets.models.level
+                    |> ArrayList.iter
+                    |> std.iter.enumerate
+            ) do (
                 if collisions.collide_and_react(
                     .position = &mut self^.player.position,
                     .velocity = &mut self^.player.velocity,
@@ -336,6 +346,9 @@ const handle_mmo = (self :: &mut Game) => (
                     .radius = self^.player.scale,
                     .mesh = &level_model^.collision_mesh,
                 ) is :Some collision then (
+                    if type_index == 1 then (
+                        restart(self);
+                    );
                     let volume = abs(collision.velocity_along_normal) / MAX_SPEED;
                     if volume > 0.1 then (
                         geng.audio.play_with(
@@ -350,6 +363,9 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .handle_event = (self, event) => (
             match event with (
+                | :KeyPress :R => (
+                    restart(self);
+                )
                 | :KeyPress :F => (
                     self^.jetpack_enabled = not self^.jetpack_enabled;
                 )
