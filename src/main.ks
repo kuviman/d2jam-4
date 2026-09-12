@@ -21,7 +21,7 @@ const Entity = newtype {
 const MIN_SCALE = 1;
 const MAX_SCALE = 2;
 
-const MAX_SPEED = 50;
+const MAX_SPEED = 200;
 
 impl Entity as module = (
     module:
@@ -207,7 +207,7 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
-            if self^.timer is :Working ref time then (
+            if self^.timer is :Working ref mut time then (
                 time^ += delta_time;
             );
             # handle_mmo(self);
@@ -369,7 +369,7 @@ const handle_mmo = (self :: &mut Game) => (
                     if type_index == 1 then (
                         restart(self);
                     );
-                    let volume = abs(collision.velocity_along_normal) / MAX_SPEED;
+                    let volume = min(abs(collision.velocity_along_normal) / 50, 1);
                     if volume > 0.1 then (
                         geng.audio.play_with(
                             level_model^.sfx,

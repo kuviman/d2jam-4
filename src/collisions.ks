@@ -206,10 +206,21 @@ const collide_and_react = (
         );
         let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
             - radius_change_speed * jump_modifier;
-        if velocity_along_normal < 0 then (
+        let bounce_rel_vel = Vec3.dot(velocity^, collision.normal);
+        if bounce_rel_vel < 0 then (
             velocity^ = Vec3.add(
                 velocity^,
-                Vec3.mul(collision.normal, -(1 + bounciness) * velocity_along_normal),
+                Vec3.mul(collision.normal, -(1 + bounciness) * bounce_rel_vel),
+            );
+        );
+        (
+            let velocity_along_normal = Vec3.dot(velocity^, collision.normal)
+                - radius_change_speed * jump_modifier;
+            if velocity_along_normal < 0 then (
+                velocity^ = Vec3.add(
+                    velocity^,
+                    Vec3.mul(collision.normal, -velocity_along_normal),
+                );
             );
         );
         let relative_angular_velocity = Vec3.add(
@@ -219,7 +230,7 @@ const collide_and_react = (
         let friction = properties^.friction;
         let angular_impulse = Vec3.mul(
             relative_angular_velocity,
-            -min(1, max(0, -velocity_along_normal) * friction),
+            -min(friction, max(0, -bounce_rel_vel) * friction),
         );
         velocity^ = Vec3.sub(
             velocity^,
