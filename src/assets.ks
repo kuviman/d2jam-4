@@ -153,6 +153,7 @@ const Assets = (
             .level_nocollisions = (
                 let mut list = ArrayList.new();
                 &mut list |> ArrayList.push_back(Model.load("assets/models/level/nocollisions/leaves"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/level/nocollisions/outline"));
                 list
             ),
             .jetpack = Model.load("assets/models/jetpack"),

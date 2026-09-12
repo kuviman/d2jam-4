@@ -134,6 +134,7 @@ const handle_mmo = (self :: &mut Game) => (
             SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
             @native "glEnable(GL_BLEND)";
             @native "glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)";
+            @native "glCullFace(GL_BACK)";
             let assets = Assets.load();
             let water = (
                 let mut v :: Vec2 = Vec2.mul({ 1, -1 }, 1000);
@@ -193,9 +194,11 @@ const handle_mmo = (self :: &mut Game) => (
             for level_model in &self^.assets.models.level |> ArrayList.iter do (
                 Model.draw(level_model^.model, Mat4.IDENTITY);
             );
+            @native "glEnable(GL_CULL_FACE)";
             for &model in &self^.assets.models.level_nocollisions |> ArrayList.iter do (
                 Model.draw(model, Mat4.IDENTITY);
             );
+            @native "glDisable(GL_CULL_FACE)";
             (
                 with Model.PlayerCtx = {
                     .position = self^.player.position,
