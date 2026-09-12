@@ -9,7 +9,7 @@ const Assets = (
     module:
 
     const t = newtype {
-        # .music :: geng.audio.Buffer,
+        .music :: geng.audio.Buffer,
         .sfx :: Sfx,
         .font :: font.Font,
         .shaders :: Shaders,
@@ -88,16 +88,15 @@ const Assets = (
     };
 
     const load = () -> t => (
-        (#
-    let music = geng.audio.load("assets/music.wav");
-    geng.audio.play_with(
-        music,
-        {
-            .@"loop" = true,
-            .gain = 2,
-        },
-    );
-    #) let sfx = {
+        let music = geng.audio.load("assets/music.wav");
+        geng.audio.play_with(
+            music,
+            {
+                .@"loop" = true,
+                .volume = 0.5,
+            },
+        );
+        let sfx = {
             .deflation = geng.audio.load("assets/sfx/deflation.wav"),
             .inflation = geng.audio.load("assets/sfx/inflation.wav"),
             .jetpack = geng.audio.load("assets/sfx/jetpack.wav"),
@@ -161,7 +160,7 @@ const Assets = (
         };
 
         {
-            # .music,
+            .music,
             .sfx,
             .font,
             .shaders,

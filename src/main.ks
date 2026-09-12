@@ -6,6 +6,8 @@ const interop = import "./interop.ks";
 const client = import "./client.ks";
 const collisions = import "./collisions.ks";
 
+const FINISH :: Vec3 = { -120.198761, -1.251943, 147.323959 };
+
 module:
 
 const Entity = newtype {
@@ -67,6 +69,7 @@ impl OtherPlayer as module = (
 const TimerState = newtype (
     | :WaitForMove
     | :Working Float32
+    | :Win Float32
     | :Disabled
 );
 
@@ -78,6 +81,7 @@ const Game = newtype {
     .player :: Entity,
     .other_players :: OrdMap.t[interop.Id, OtherPlayer],
     .jetpack_enabled :: Bool,
+    .cheated :: Bool,
     .jetpack_sfx :: geng.audio.Effect,
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
     .timer :: TimerState,
@@ -96,6 +100,7 @@ const reset_player = (.skin) -> Entity => {
 const restart = (self :: &mut Game) => (
     self^.player = reset_player(.skin = self^.player.skin);
     self^.timer = :WaitForMove;
+    self^.cheated = false;
 );
 
 const handle_mmo = (self :: &mut Game) => (
@@ -175,6 +180,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .player = reset_player(.skin = 0),
                 .other_players = OrdMap.new(),
                 .jetpack_enabled = false,
+                .cheated = false,
                 .flate_sfx = :None,
                 .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
                 .timer = :WaitForMove,
@@ -261,7 +267,32 @@ const handle_mmo = (self :: &mut Game) => (
                 },
                 .framebuffer_size = geng.get_window_size(),
             );
-            if self^.timer is :Working t then (
+            let time :: Option.t[Float32] = match self^.timer with (
+                | :Working t => :Some t
+                | :Win t => :Some t
+                | _ => :None
+            );
+            let color = if self^.cheated then { 1, 0, 0, 1 } else { 0, 0, 0, 1 };
+            if self^.timer is :Win _ then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    "YOU HAVE SCALED THE MOUNTAIN",
+                    .matrix = Mat4.translate({ 0, 5, 0})
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(10))),
+                    .color,
+                    .align = 0.5,
+                );
+                if self^.cheated then (
+                    font.Font.draw(
+                        &self^.assets.font,
+                        "with cheats",
+                        .matrix = Mat4.translate({ 0, 4, 0}),
+                        .color,
+                        .align = 0.5,
+                    );
+                );
+            );
+            if time is :Some t then (
                 font.Font.draw(
                     &self^.assets.font,
                     (
@@ -276,7 +307,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .matrix = Mat4.translate({ 0, 7, 0})
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
                         |> Mat4.mul_mat(Mat4.scale_uniform(2)),
-                    .color = { 0, 0, 0, 1 },
+                    .color,
                     .align = 0.5,
                 );
             );
@@ -289,8 +320,23 @@ const handle_mmo = (self :: &mut Game) => (
             # handle_mmo(self);
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
             let mut max_speed = MAX_SPEED;
+            if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < self^.player.scale then (
+                if self^.timer is :Working t then (
+                    self^.timer = :Win t;
+                );
+            );
             if self^.jetpack_enabled then (
-                self^.timer = :Disabled;
+                self^.cheated = true;
+            );
+            if false and self^.jetpack_enabled then (
+                let disable = match self^.timer with (
+                    | :WaitForMove => true
+                    | :Working _ => true
+                    | _ => false
+                );
+                if disable then (
+                    self^.timer = :Disabled;
+                );
             );
             let mut wasd :: Vec2 = { 0, 0 };
             if geng.input.Key.is_pressed(:W) or geng.input.Key.is_pressed(:ArrowUp) then (
@@ -482,6 +528,9 @@ const handle_mmo = (self :: &mut Game) => (
                 )
                 | :KeyPress :Enter => (
                     self^.player.skin = (self^.player.skin + 1) % ArrayList.length(&self^.assets.models.skins);
+                )
+                | :KeyPress :K => (
+                    print(to_string(self^.player.position));
                 )
                 | :MousePress _ => (
                     SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);

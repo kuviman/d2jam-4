@@ -1,5 +1,17 @@
 const Vec3 = newtype { Float32, Float32, Float32 };
 
+impl Vec3 as ToString = {
+    .to_string = m => (
+        "{ "
+        + to_string(m.0)
+        + ", "
+        + to_string(m.1)
+        + ", "
+        + to_string(m.2)
+        + " }"
+    )
+};
+
 impl Vec3 as module = (
     module:
 
