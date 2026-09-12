@@ -224,7 +224,16 @@ const handle_mmo = (self :: &mut Game) => (
                 &self^.assets.font,
                 "WASD to ROLL",
                 .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                "Mouse to LOOK",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
                     |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
                 .color = { 0, 0, 0, 1 },
                 .align = 0.5,
