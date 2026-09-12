@@ -121,11 +121,11 @@ const Assets = (
         let models = {
             .skins = (
                 let mut list = ArrayList.new();
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/fish"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/unicorn"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/daivy"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/fart"));
-                &mut list |> ArrayList.push_back(Model.load("assets/models/player/fish"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/pgorley"));
-                &mut list |> ArrayList.push_back(Model.load("assets/models/player/unicorn"));
                 list
             ),
             .level = (

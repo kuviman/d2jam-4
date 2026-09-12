@@ -268,14 +268,12 @@ const handle_mmo = (self :: &mut Game) => (
                     )
                 ) else true;
                 if play then (
+                    let volume = if scale_dir > 0 then 1 else (
+                        (self^.player.scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)
+                    );
                     let sfx = geng.audio.play_with(
                         if scale_dir > 0 then self^.assets.sfx.inflation else self^.assets.sfx.deflation,
-                        { .volume =
-                            if scale_dir > 0 then 1 else (
-                                (self^.player.scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)
-                            ),
-                            .@"loop" = false,
-                        },
+                        { .volume = volume * 0.3, .@"loop" = false },
                     );
                     self^.flate_sfx = :Some { sfx, .dir = scale_dir };
                 );
