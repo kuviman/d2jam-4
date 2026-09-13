@@ -85,6 +85,7 @@ const Game = newtype {
     .jetpack_sfx :: geng.audio.Effect,
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
     .timer :: TimerState,
+    .next_physics :: Float32,
 };
 
 const reset_player = (.skin) -> Entity => {
@@ -101,6 +102,49 @@ const restart = (self :: &mut Game) => (
     self^.player = reset_player(.skin = self^.player.skin);
     self^.timer = :WaitForMove;
     self^.cheated = false;
+);
+
+const update_step = (self :: &mut Game, delta_time :: Float32) => (
+    let mut max_speed = MAX_SPEED;
+    let scale_dir = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
+        if self^.player.scale < MAX_SCALE then (
+            1
+        ) else 0
+    ) else (
+        if self^.player.scale > MIN_SCALE then (
+            -1
+        ) else 0
+    );
+    let scale_speed = Int32_to_Float32(scale_dir);
+    let scale_time = 0.2;
+    let scale_speed = scale_speed / scale_time;
+    for { type_index, level_model } in (
+        &self^.assets.models.level
+            |> ArrayList.iter
+            |> std.iter.enumerate
+    ) do (
+        if collisions.collide_and_react(
+            .position = &mut self^.player.position,
+            .velocity = &mut self^.player.velocity,
+            .angular_velocity = &mut self^.player.angular_velocity,
+            .radius_change_speed = scale_speed,
+            .radius = self^.player.scale,
+            .mesh = &level_model^.collision_mesh,
+            .properties = &level_model^.properties,
+        ) is :Some collision then (
+            if type_index == 1 then (
+                restart(self);
+            );
+            let volume = min(abs(collision.velocity_along_normal) / 50, 1);
+            if volume > 0.1 then (
+                geng.audio.play_with(
+                    level_model^.sfx,
+                    { .volume, .@"loop" = false },
+                );
+            );
+        );
+    );
+    self^.player.velocity = Vec3.clamp_len(self^.player.velocity, max_speed);
 );
 
 const handle_mmo = (self :: &mut Game) => (
@@ -184,9 +228,11 @@ const handle_mmo = (self :: &mut Game) => (
                 .flate_sfx = :None,
                 .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
                 .timer = :WaitForMove,
+                .next_physics = 0,
             }
         ),
         .draw = self => with_return (
+            self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
             with Assets.Ctx = self^.assets;
             with Model.Renderer.Ctx = self^.model_renderer;
             with Model.PlayerCtx = {
@@ -252,6 +298,15 @@ const handle_mmo = (self :: &mut Game) => (
                 "F to CHEAT",
                 .matrix = Mat4.rotate_z(Angle.from_degrees(10))
                     |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
+                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                .color = { 0, 0, 0, 1 },
+                .align = 0.5,
+            );
+            font.Font.draw(
+                &self^.assets.font,
+                "Enter to CHANGE SKIN",
+                .matrix = Mat4.rotate_z(Angle.from_degrees(90))
+                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
                     |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
                 .color = { 0, 0, 0, 1 },
                 .align = 0.5,
@@ -328,7 +383,6 @@ const handle_mmo = (self :: &mut Game) => (
             );
             # handle_mmo(self);
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
-            let mut max_speed = MAX_SPEED;
             if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < self^.player.scale then (
                 if self^.timer is :Working t then (
                     self^.timer = :Win t;
@@ -514,34 +568,13 @@ const handle_mmo = (self :: &mut Game) => (
                     );
                 );
             );
-            for { type_index, level_model } in (
-                &self^.assets.models.level
-                    |> ArrayList.iter
-                    |> std.iter.enumerate
-            ) do (
-                if collisions.collide_and_react(
-                    .position = &mut self^.player.position,
-                    .velocity = &mut self^.player.velocity,
-                    .angular_velocity = &mut self^.player.angular_velocity,
-                    .radius_change_speed = scale_speed,
-                    .radius = self^.player.scale,
-                    .mesh = &level_model^.collision_mesh,
-                    .properties = &level_model^.properties,
-                ) is :Some collision then (
-                    if type_index == 1 then (
-                        restart(self);
-                    );
-                    let volume = min(abs(collision.velocity_along_normal) / 50, 1);
-                    if volume > 0.1 then (
-                        geng.audio.play_with(
-                            level_model^.sfx,
-                            { .volume, .@"loop" = false },
-                        );
-                    );
-                );
+            self^.next_physics -= delta_time;
+            const TPS :: Float32 = 100;
+            const STEP = 1 / TPS;
+            while self^.next_physics < STEP do (
+                update_step(self, STEP);
+                self^.next_physics += STEP;
             );
-            self^.player.velocity = Vec3.clamp_len(self^.player.velocity, max_speed);
-            self^.camera.position = Vec3.add(self^.player.position, { 0, 0, 3 });
         ),
         .handle_event = (self, event) => (
             match event with (
