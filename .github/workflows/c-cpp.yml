@@ -28,14 +28,11 @@ jobs:
         with:
           name: server
           path: dist/
-
-      - name: Copy files via SCP
-        uses: appleboy/scp-action@v0.1.7
+      - run: ls dist/
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
         with:
-          debug: true
-          host: 15.204.212.176
-          username: ubuntu
           key: ${{ secrets.DEPLOY_KEY }}
-          port: 22
-          source: "dist/server"
-          target: "/home/ubuntu/."
+          known_hosts: ${{ secrets.KNOWN_HOST }}
+          
+      - run: "scp net/server ubuntu@$15.204.212.176:/home/ubuntu/."
