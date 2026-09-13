@@ -170,6 +170,14 @@ int main(int argc, char *argv[])
             }
           };
           tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+          struct __attribute__((packed)) {
+            ServerMsgTag tag;
+            ServerMsgPlayerMeta data;
+          } msg = {
+            .tag = ServerPlayerMeta,
+            .data = pdata[i].meta,
+          };
+          tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
           LOG_DEBUG("Sending existing client id %llu to %llu\n", pdata[i].meta.id, data->id);
         }
 
