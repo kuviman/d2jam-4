@@ -99,14 +99,14 @@ void * has_full_message(UserData* user, size_t n, int* looping) {
   return ret;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
     if (tcs_lib_init() != TCS_SUCCESS)
         return show_error("Could not init tinycsocket");
 
     TcsSocket listen_socket = TCS_SOCKET_INVALID;
 
-    if (tcs_socket_tcp_str(&listen_socket, "127.0.0.1:1234", NULL, 0) != TCS_SUCCESS)
+    if (tcs_socket_tcp_str(&listen_socket, argv[1], NULL, 0) != TCS_SUCCESS)
         return show_error("Could not create server socket");
 
     if (tcs_listen(listen_socket, TCS_BACKLOG_MAX) != TCS_SUCCESS)
