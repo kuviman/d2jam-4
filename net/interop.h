@@ -44,7 +44,7 @@ typedef struct __attribute__((packed)) {
   unsigned long long duration;
 } ClientMsgBeatGame;
 
-#define MAX_NAME_LEN 24
+#define MAX_NAME_LEN 27
 typedef struct __attribute__((packed)) {
   char name[MAX_NAME_LEN + 1];
 } ClientMsgSetName;
