@@ -1,4 +1,5 @@
 {
     "bounciness": 1,
-    "friction": 0.2
+    "friction": 0.2,
+    "animated": false
 }

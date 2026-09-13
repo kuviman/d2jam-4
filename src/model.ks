@@ -46,7 +46,7 @@ const Model = (
         );
     );
 
-    const draw = (model :: Model.t, matrix :: Mat4) => (
+    const draw = (model :: Model.t, animated :: Bool, matrix :: Mat4) => (
         let renderer = @current Renderer.Ctx;
         let camera = @current geng.CameraUniforms.Ctx;
 
@@ -56,6 +56,18 @@ const Model = (
         let mut draw_state = ugli.DrawState.init();
         let draw_state = &mut draw_state;
 
+        program
+            |> ugli.set_uniform(
+                "u_time",
+                geng.time_since_start(),
+                draw_state
+            );
+        program
+            |> ugli.set_uniform(
+                "u_animated",
+                if animated then 1 else 0 :: Float32,
+                draw_state
+            );
         program
             |> ugli.set_uniform(
                 "u_model_matrix",

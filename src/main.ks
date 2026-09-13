@@ -35,6 +35,7 @@ impl Entity as module = (
         let assets = @current Assets.Ctx;
         Model.draw(
             assets.models.skins.[entity^.skin],
+            false,
             Mat4.translate(entity^.position)
                 |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
                 |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
@@ -43,6 +44,7 @@ impl Entity as module = (
             let angle = Angle.from_degrees(1000 * geng.time_since_start());
             Model.draw(
                 assets.models.jetpack,
+                false,
                 Mat4.translate(entity^.position)
                     |> Mat4.mul_mat(Mat4.rotate_z(angle)),
             );
@@ -63,6 +65,7 @@ impl OtherPlayer as module = (
         let assets = @current Assets.Ctx;
         Model.draw(
             assets.models.skins.[entity^.skin],
+            false,
             Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
                 |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
         );
@@ -108,6 +111,10 @@ const restart = (self :: &mut Game) => (
     self^.jetpack_enabled = false;
 );
 
+const is_jump_pressed = () => (
+    geng.input.Key.is_pressed(:Space) or geng.input.Key.is_pressed(:Backspace)
+);
+
 const update_step = (self :: &mut Game, delta_time :: Float32) => (
     let old_z = self^.player.position.2;
     self^.player.position = Vec3.add(
@@ -125,7 +132,7 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => (
         );
     );
     let mut max_speed = MAX_SPEED;
-    let scale_dir = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
+    let scale_dir = if not self^.jetpack_enabled and is_jump_pressed() then (
         if self^.player.scale < MAX_SCALE then (
             1
         ) else 0
@@ -264,11 +271,11 @@ const handle_mmo = (self :: &mut Game) => (
             );
             ugli.clear({ 0.8, 0.8, 1, 1 });
             for level_model in &self^.assets.models.level |> ArrayList.iter do (
-                Model.draw(level_model^.model, Mat4.IDENTITY);
+                Model.draw(level_model^.model, level_model^.properties.animated, Mat4.IDENTITY);
             );
             @native "glEnable(GL_CULL_FACE)";
             for &model in &self^.assets.models.level_nocollisions |> ArrayList.iter do (
-                Model.draw(model, Mat4.IDENTITY);
+                Model.draw(model, false, Mat4.IDENTITY);
             );
             @native "glDisable(GL_CULL_FACE)";
             (
@@ -281,7 +288,7 @@ const handle_mmo = (self :: &mut Game) => (
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
-            Model.draw(self^.water, Mat4.IDENTITY);
+            Model.draw(self^.water, true, Mat4.IDENTITY);
 
             let height = 12;
             let distance = 8;
@@ -451,7 +458,7 @@ const handle_mmo = (self :: &mut Game) => (
                     ),
                     (
                         let mut z = 0;
-                        if geng.input.Key.is_pressed(:Space) then (
+                        if is_jump_pressed() then (
                             z += 1;
                         );
                         if geng.input.Key.is_pressed(:LeftShift) then (
@@ -505,7 +512,7 @@ const handle_mmo = (self :: &mut Game) => (
                 );
             );
 
-            let scale_dir = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
+            let scale_dir = if not self^.jetpack_enabled and is_jump_pressed() then (
                 if self^.player.scale < MAX_SCALE then (
                     1
                 ) else 0

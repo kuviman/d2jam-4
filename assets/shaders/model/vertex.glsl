@@ -12,8 +12,14 @@ uniform mat4 u_model_matrix;
 uniform mat4 u_view_matrix;
 uniform mat4 u_projection_matrix;
 
+uniform float u_animated;
+uniform float u_time;
+
 void main() {
     v_uv = a_uv;
+    v_uv += vec2(sin(u_time * 2.12), sin(u_time * 1.2345)) * u_animated * 0.1;
+    float slope = length(a_normal.xy);
+    v_uv += u_animated * u_time * slope * 0.3;
     v_normal = (u_model_matrix * vec4(a_normal, 0.0)).xyz;
     v_camera_normal = (u_view_matrix * vec4(v_normal, 0.0)).xyz;
     vec4 world_pos = u_model_matrix * vec4(a_pos, 1.0);

@@ -184,6 +184,7 @@ const collide = (entity :: Entity, mesh :: &Mesh) -> Option.t[Collision] => with
 const MeshProperties = newtype {
     .bounciness :: Float32,
     .friction :: Float32,
+    .animated :: Bool,
 };
 
 const CollisionResult = newtype {
