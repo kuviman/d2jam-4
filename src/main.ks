@@ -105,6 +105,7 @@ const restart = (self :: &mut Game) => (
     self^.player = reset_player(.skin = self^.player.skin);
     self^.timer = :WaitForMove;
     self^.cheated = false;
+    self^.jetpack_enabled = false;
 );
 
 const update_step = (self :: &mut Game, delta_time :: Float32) => (
