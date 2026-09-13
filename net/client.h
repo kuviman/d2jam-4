@@ -95,7 +95,7 @@ TcsResult badcop_set_name(const char *name) {
       .tag = ClientSetName,
       .data = {0},
     };
-    strncpy(&msg.data.name, name, MAX_NAME_LEN);
+    strncpy(msg.data.name, name, MAX_NAME_LEN);
     TcsResult res = tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
     if (res != TCS_SUCCESS) {
       connected = 0;

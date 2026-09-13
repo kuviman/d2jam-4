@@ -160,16 +160,28 @@ int main(int argc, char *argv[])
         for (size_t i = 0; i < MAX_CONNECTIONS; ++i) {
           if (!pdata[i].is_valid) continue;
           if (i == p) continue;
-          struct __attribute__((packed)) {
-            ServerMsgTag tag;
-            ServerMsgConnected data;
-          } msg = {
-            .tag = ServerConnected,
-            .data = {
-              .id = pdata[i].meta.id,
-            }
-          };
-          tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+          {
+            struct __attribute__((packed)) {
+              ServerMsgTag tag;
+              ServerMsgConnected data;
+            } msg = {
+              .tag = ServerConnected,
+              .data = {
+                .id = pdata[i].meta.id,
+              }
+            };
+            tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+          }
+          {
+            struct __attribute__((packed)) {
+              ServerMsgTag tag;
+              ServerMsgPlayerMeta data;
+            } msg = {
+              .tag = ServerPlayerMeta,
+              .data = pdata[i].meta,
+            };
+            tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+          }
           LOG_DEBUG("Sending existing client id %llu to %llu\n", pdata[i].meta.id, data->id);
         }
 
@@ -216,7 +228,7 @@ int main(int argc, char *argv[])
                           .tag = ServerPlayerMeta,
                           .data = pdata[user->pidx].meta,
                         };
-                        broadcast(poll, &msg, sizeof(msg), pdata[user->pidx].meta.id);
+                        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
                       }
                     }
                     break;
@@ -224,7 +236,7 @@ int main(int argc, char *argv[])
                   case ClientSetName: {
                     ClientMsgSetName* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgSetName), &looping)) {
-                        strncpy(&pdata[user->pidx].meta.name, msg->name, MAX_NAME_LEN);
+                        strncpy(pdata[user->pidx].meta.name, msg->name, MAX_NAME_LEN);
                         // send a world update to other players
                         struct __attribute__((packed)) {
                           ServerMsgTag tag;
@@ -233,7 +245,7 @@ int main(int argc, char *argv[])
                           .tag = ServerPlayerMeta,
                           .data = pdata[user->pidx].meta,
                         };
-                        broadcast(poll, &msg, sizeof(msg), pdata[user->pidx].meta.id);
+                        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
                     }
                     break;
                   }
