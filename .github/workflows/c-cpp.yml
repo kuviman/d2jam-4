@@ -35,4 +35,4 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOST }}
           
-      - run: "scp -O dist/server ubuntu@15.204.212.176:/home/ubuntu/."
+      - run: "scp -P 22222 dist/server ubuntu@15.204.212.176:/home/ubuntu/."
