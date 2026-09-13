@@ -70,7 +70,8 @@ build src="src/main.ks":
 
 run:
     LSAN_OPTIONS='suppresions=suppr.txt' \
-        ./target/compiled/main.exe --server 127.0.0.1:1235 --connect 127.0.0.1:1235
+        ./target/compiled/main.exe --connect 15.204.212.176:5555
+    # ./target/compiled/main.exe --server 127.0.0.1:1235 --connect 127.0.0.1:1235
 
 server:
     LSAN_OPTIONS='suppresions=suppr.txt' \
