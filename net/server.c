@@ -1,0 +1,258 @@
+/*
+ * Copyright 2018 Markus Lindelöw
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files(the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#define TINYCSOCKET_IMPLEMENTATION
+#include "tinycsocket.h"
+#include "interop.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_CONNECTIONS 1024
+#define RECV_BUFSIZE 1024
+typedef struct UserData {
+  unsigned long long id;
+  size_t pidx;
+  size_t start;
+  size_t end;
+  char buf[RECV_BUFSIZE];
+} UserData;
+
+typedef struct PlayerData {
+  ClientMsgUpdate data;
+  unsigned long long id;
+  int is_valid;
+  TcsSocket socket;
+} PlayerData;
+
+PlayerData pdata[MAX_CONNECTIONS] = {};
+
+#ifdef DEBUG
+#define LOG_DEBUG(...) printf(__VA_ARGS__)
+#else
+#define LOG_DEBUG(...) __VA_ARGS__;
+#endif
+
+// i think i separate fmt usually so i can do e.g.
+// LOG_DEBUG(fmt, ...) printf("[debug]" fmt, __VA_ARGS__)
+
+static int show_error(const char* error_text)
+{
+    fprintf(stderr, "%s", error_text);
+    return -1;
+}
+
+void broadcast(struct TcsPoll* poll, const uint8_t *msg, size_t msg_size) {
+  for (size_t i = 0; i < MAX_CONNECTIONS; ++i) {
+    if (pdata[i].is_valid) {
+      tcs_send(pdata[i].socket, msg, msg_size, TCS_MSG_SENDALL, NULL);
+      LOG_DEBUG("Sending broadcast to %llu\n", pdata[i].id);
+    }
+  }
+}
+
+void disconnect(struct TcsPoll* poll, TcsSocket socket, UserData* user_data) {
+    tcs_poll_remove(poll, socket);
+    tcs_close(&socket);
+    struct __attribute__((packed)) {
+      ServerMsgTag tag;
+      ServerMsgDisconnected data;
+    } msg = {
+      .tag = ServerDisconnected,
+      .data = {
+        .id = user_data->id,
+      }
+    };
+    pdata[user_data->pidx].is_valid = false;
+    broadcast(poll, (const uint8_t*)&msg, sizeof(msg));
+    free(user_data);
+}
+
+void * has_full_message(UserData* user, size_t n, int* looping) {
+  if (user->end < user->start + n + 4) {
+    if (looping != NULL) {
+      *looping = 0;
+    }
+    return NULL;
+  }
+  void *ret = user->buf + user->start + 4;
+  user->start += n + 4;
+  return ret;
+}
+
+int main(void)
+{
+    if (tcs_lib_init() != TCS_SUCCESS)
+        return show_error("Could not init tinycsocket");
+
+    TcsSocket listen_socket = TCS_SOCKET_INVALID;
+
+    if (tcs_socket_tcp_str(&listen_socket, "127.0.0.1:8080", NULL, 0) != TCS_SUCCESS)
+        return show_error("Could not create server socket");
+
+    if (tcs_listen(listen_socket, TCS_BACKLOG_MAX) != TCS_SUCCESS)
+        return show_error("Could not listen on socket");
+    
+    tcs_opt_nonblocking_set(listen_socket, true);
+    tcs_opt_ip_no_delay_set(listen_socket, true);
+
+    struct TcsPoll* poll = NULL;
+    tcs_poll_create(&poll);
+
+    unsigned long long client_id = 0;
+    struct TcsPollEvent ev[MAX_CONNECTIONS] = {};
+    while(69) {
+      TcsSocket child_socket = TCS_SOCKET_INVALID;
+      if (tcs_accept(listen_socket, &child_socket, NULL) == TCS_SUCCESS) {
+        tcs_opt_ip_no_delay_set(child_socket, true);
+        LOG_DEBUG("Accepted client: %lld\n", client_id);
+        
+        // broadcast to everybody else
+        struct __attribute__((packed)) {
+          ServerMsgTag tag;
+          ServerMsgConnected data;
+        } msg = {
+          .tag = ServerConnected,
+          .data = {
+            .id = client_id,
+          }
+        };
+
+        broadcast(poll, (const uint8_t*)&msg, sizeof(msg));
+        
+        UserData *data = (UserData*)calloc(1, sizeof(UserData));
+        data->id = client_id;
+         
+        // find a slot for this player in 'pdata'
+        size_t p;
+        for (p = 0; p < MAX_CONNECTIONS; ++p) {
+          if (!pdata[p].is_valid) {
+            break;
+          }
+        }
+        pdata[p].id = client_id;
+        pdata[p].socket = child_socket;
+        pdata[p].data = (ClientMsgUpdate){};
+        pdata[p].is_valid = 1;
+        data->pidx = p;
+
+        // send existing client list to player
+        for (size_t i = 0; i < MAX_CONNECTIONS; ++i) {
+          if (!pdata[i].is_valid) continue;
+          if (i == p) continue;
+          struct __attribute__((packed)) {
+            ServerMsgTag tag;
+            ServerMsgConnected data;
+          } msg = {
+            .tag = ServerConnected,
+            .data = {
+              .id = pdata[i].id,
+            }
+          };
+          tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+          LOG_DEBUG("Sending existing client id %llu to %llu\n", pdata[i].id, data->id);
+        }
+
+        // add to our poll list
+        tcs_poll_add(poll, child_socket, data, TCS_POLL_READ);
+
+        // do this last so we stay sane
+        client_id++;
+      }
+
+      size_t events;
+      TcsResult poll_res = tcs_poll_wait(poll, ev, MAX_CONNECTIONS, &events, 10);
+
+      for (size_t i = 0; i < events; ++i)
+      {
+          if (ev[i].can_read)
+          {
+              size_t received_size = 0;
+              UserData *user = ev[i].user_data;
+              TcsResult recv_res = tcs_receive(ev[i].socket, user->buf + user->end, RECV_BUFSIZE - user->end, TCS_FLAG_NONE, &received_size);
+              if (recv_res != TCS_SUCCESS) {
+                LOG_DEBUG("disconnect\n");
+                disconnect(poll, ev[i].socket, ev[i].user_data);
+                continue;
+              }
+              user->end += received_size;
+
+              if (received_size == 0) {
+                continue;
+              }
+              int looping = 1;
+              while(looping && user->start <= user->end + 4) {
+                switch(user->buf[user->start]) {
+                  case ClientUpdate: {
+                    ClientMsgUpdate* msg;
+                    if (msg = has_full_message(user, sizeof(ClientMsgUpdate), &looping)) {
+                      // do something with the message
+                      pdata[user->pidx].data = *msg;
+                      
+                      // send a world update to this player
+                      for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
+                        if (!pdata[j].is_valid) continue;
+                        if (pdata[j].id == user->id) continue;
+                        struct __attribute__((packed)) {
+                          ServerMsgTag tag;
+                          ServerMsgUpdatePlayer data;
+                        } msg = {
+                          .tag = ServerUpdatePlayer,
+                          .data = {
+                            .id = pdata[j].id,
+                            .stuff = pdata[j].data,
+                          }
+                        };
+                        tcs_send(ev[i].socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+                        LOG_DEBUG("Sending world update to %llu\n", user->id);
+                      }
+                      LOG_DEBUG("got update\n\tx: %f\n\ty: %f\n\tz: %f\n", 
+                        msg->px, msg->py, msg->pz);
+                    }
+                    break;
+                  }
+                  default:
+                    looping = 0;
+                    break;
+                }
+              }
+              // reset buffer 
+              if (user->start == user->end) {
+                user->start = 0;
+                user->end = 0;
+              }
+              // shift remaining garbage to the front of the buffer
+              else if (user->start && user->start < user->end) {
+                memmove(user->buf,  user->buf + user->start, user->end - user->start);
+                user->end = user->end - user->start;
+                user->start = 0;
+              }
+          }
+      }
+    }
+
+    if (tcs_close(&listen_socket) != TCS_SUCCESS)
+        return show_error("Could not close socket");
+
+    if (tcs_lib_cleanup() != TCS_SUCCESS)
+        return show_error("Could not free tinycsocket");
+}
