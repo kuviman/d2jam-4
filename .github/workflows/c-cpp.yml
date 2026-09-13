@@ -18,3 +18,23 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         path: net/server
+        name: server
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: server
+          path: dist/
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 15.204.212.176
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          source: "dist/server"
+          target: "/root/."
