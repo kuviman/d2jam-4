@@ -1,7 +1,8 @@
 typedef enum ServerMsgTag {
   ServerUpdatePlayer,
   ServerConnected,
-  ServerDisconnected
+  ServerDisconnected,
+  ServerRequestUpdate
 } ServerMsgTag;
 
 
@@ -16,6 +17,9 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
   unsigned long long id;
 } ServerMsgDisconnected;
+
+typedef struct __attribute__((packed)) {
+} ServerMsgRequestUpdate;
 
 typedef struct __attribute__((packed)) {
   float px;
