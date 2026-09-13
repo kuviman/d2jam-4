@@ -76,25 +76,20 @@ impl OtherPlayer as module = (
     );
 
     const draw = (self :: &OtherPlayer) => (
-        let assets = @current Assets.Ctx;
-        if not self^.jetpack or self^.skin != 5 then (
-            Model.draw(
-                assets.models.skins.[self^.skin],
-                false,
-                Mat4.translate(self^.position.value)
-                    |> Mat4.mul_mat(Mat4.scale_uniform(self^.scale.value))
-                    |> Mat4.mul_mat(Quat.into_mat4(self^.rotation.value)),
+        let mut vel = { 0, 0, 0 };
+        if self^.position.time_remaining > 0.001 then (
+            vel = Vec3.div(
+                Vec3.sub(self^.position.target_value, self^.position.value),
+                self^.position.time_remaining,
             );
         );
-        if self^.jetpack then (
-            let mut vel = { 0, 0, 0 };
-            if self^.position.time_remaining > 0.001 then (
-                vel = Vec3.div(
-                    Vec3.sub(self^.position.target_value, self^.position.value),
-                    self^.position.time_remaining,
-                );
-            );
-            draw_jetpack(self^.position.value, vel, self^.skin);
+        draw_skin(
+            self^.skin,
+            self^.position.value,
+            vel,
+            self^.scale.value,
+            self^.rotation.value,
+            .jetpack = self^.jetpack,
         );
     );
 );

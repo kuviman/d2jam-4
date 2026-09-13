@@ -92,6 +92,7 @@ const Assets = (
         .jetpack :: Model.t,
         .badarms :: Model.t,
         .dragon_scale :: Model.t,
+        .wormy :: Model.t,
     };
 
     const load = () -> t => (
@@ -153,6 +154,16 @@ const Assets = (
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/pgorley"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/badball"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/vezball"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/cabbage"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/categon"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/dog"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/gob"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/howl"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/krab"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/moo"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/penguin"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/pomo"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/wormy"));
                 list
             ),
             .level = (
@@ -177,6 +188,7 @@ const Assets = (
             .jetpack = Model.load("assets/models/jetpack"),
             .dragon_scale = Model.load("assets/models/collectable/dragonScale"),
             .badarms = Model.load("assets/models/player/badball/arms"),
+            .wormy = Model.load("assets/models/player/wormy/worm"),
         };
 
         {
