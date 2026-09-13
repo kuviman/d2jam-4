@@ -1,0 +1,20 @@
+name: deploy server
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: make server
+      run: make server
+      working-directory: net
+    - uses: actions/upload-artifact@v7
+      with:
+        path: net/server
