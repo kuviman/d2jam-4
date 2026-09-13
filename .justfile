@@ -36,6 +36,7 @@ build-emscripten source="target/compiled/main.c":
     rm -rf target/web
     mkdir -p target/web
     emcc {{source}} \
+        -I. \
         --shell-file shell.html \
         -o target/web/index.html \
         -I ${BOEHMGC_WEB}/include \

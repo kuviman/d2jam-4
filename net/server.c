@@ -106,7 +106,7 @@ int main(void)
 
     TcsSocket listen_socket = TCS_SOCKET_INVALID;
 
-    if (tcs_socket_tcp_str(&listen_socket, "127.0.0.1:8080", NULL, 0) != TCS_SUCCESS)
+    if (tcs_socket_tcp_str(&listen_socket, "127.0.0.1:1234", NULL, 0) != TCS_SUCCESS)
         return show_error("Could not create server socket");
 
     if (tcs_listen(listen_socket, TCS_BACKLOG_MAX) != TCS_SUCCESS)
