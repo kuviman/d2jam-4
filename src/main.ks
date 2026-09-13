@@ -55,7 +55,7 @@ const draw_jetpack = (pos :: Vec3, vel :: Vec3, skin :: Int32) => (
         if skin == 5 then assets.models.badarms else assets.models.jetpack,
         false,
         Mat4.translate(pos)
-            |> Mat4.mul_mat(Mat4.rotate(Vec3.cross({ 0, 0, 1 }, Vec3.clamp_len(vel, 1)), Angle.from_degrees(30 / player_speed)))
+            |> Mat4.mul_mat(Mat4.rotate(Vec3.cross({ 0, 0, 1 }, vel), Angle.from_degrees(30 / player_speed)))
             |> Mat4.mul_mat(Mat4.rotate_z(angle)),
     );
 );
