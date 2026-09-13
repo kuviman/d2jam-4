@@ -3,6 +3,8 @@ name: deploy server
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'net/**'
   workflow_dispatch: {}
 
 jobs:
