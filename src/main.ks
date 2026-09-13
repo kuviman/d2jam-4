@@ -210,6 +210,8 @@ const handle_mmo = (self :: &mut Game) => (
                     |> Option.unwrap;
                 OtherPlayer.update_net(player, data);
             )
+            | :PlayerMeta _ => (
+            )
         )
     );
 
@@ -485,6 +487,7 @@ const handle_mmo = (self :: &mut Game) => (
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
             if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < self^.player.scale then (
                 if self^.timer is :Working t then (
+                    badcop.beat_game(Float32_to_Int32(t));
                     self^.timer = :Win t;
                 );
             );
@@ -717,6 +720,7 @@ if args.server is :Some address then (
 );
 if args.connect is :Some address then (
     badcop.init(address);
+    badcop.set_name("<todo name>");
     # let c = client.connect(address);
     # with client.Ctx = c;
     geng.run[Game]();

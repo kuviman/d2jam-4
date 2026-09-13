@@ -17,6 +17,14 @@ const PlayerData = newtype {
     .scale :: Float32,
 };
 
+const set_name = (name :: String) => (
+    @native "badcop_set_name(String_to_C_String(\(name)))";
+);
+
+const beat_game = (score :: Int32) => (
+    @native "badcop_beat_game(\(score))";
+);
+
 const send_update = (u :: PlayerData) => (
     @native ''
         badcop_send_update((ClientMsgUpdate) {
@@ -50,6 +58,11 @@ const ServerMessage = newtype (
     | :UpdatePlayer {
         .id :: Id,
         .data :: PlayerData,
+    }
+    | :PlayerMeta {
+        .id :: Id,
+        .best_time :: Int32,
+        .name :: String,
     }
 );
 
@@ -99,6 +112,14 @@ const poll_message = () -> Option.t[ServerMessage] => with_return (
     if @native "\(tag) == ServerDisconnected" then (
         let data :: @opaque_type "ServerMsgDisconnected*" = @native "\(data)";
         return :Some :Disconnected (@native "\(data)->id");
+    );
+    if @native "\(tag) == ServerPlayerMeta" then (
+        let data :: @opaque_type "ServerMsgPlayerMeta*" = @native "\(data)";
+        return :Some :PlayerMeta {
+            .id = @native "\(data)->id",
+            .best_time = @native "\(data)->best_time",
+            .name = @native "String_from_C_String(\(data)->name)",
+        };
     );
     panic("Unrecognized tag in server message")
 );
