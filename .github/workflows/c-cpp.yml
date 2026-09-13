@@ -35,6 +35,6 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOST }}
           
-      - run: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P 22222 ubuntu@15.204.212.176 'sudo systemctl stop d2jam4'"
+      - run: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22222 ubuntu@15.204.212.176 'sudo systemctl stop d2jam4'"
       - run: "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P 22222 dist/server ubuntu@15.204.212.176:/home/ubuntu/."
-      - run: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P 22222 ubuntu@15.204.212.176 'sudo systemctl start d2jam4'"
+      - run: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22222 ubuntu@15.204.212.176 'sudo systemctl start d2jam4'"
