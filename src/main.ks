@@ -108,6 +108,8 @@ const Game = newtype {
     .next_physics :: Float32,
     .dragon_scales :: ArrayList.t[DragonScale],
     .next_send :: Float32,
+    .dead :: Bool,
+    .dead_timer :: Float32,
 };
 
 const DragonScale = newtype {
@@ -145,6 +147,8 @@ const reset_player = (.skin) -> Entity => {
 };
 
 const restart = (self :: &mut Game) => (
+    self^.dead = false;
+    self^.dead_timer = 0;
     self^.player = reset_player(.skin = self^.player.skin);
     self^.timer = :WaitForMove;
     self^.cheated = false;
@@ -156,7 +160,8 @@ const is_jump_pressed = () => (
     geng.input.Key.is_pressed(:Space) or geng.input.Key.is_pressed(:Backspace)
 );
 
-const update_step = (self :: &mut Game, delta_time :: Float32) => (
+const update_step = (self :: &mut Game, delta_time :: Float32) => with_return (
+    if self^.dead then return;
     let old_z = self^.player.position.2;
     self^.player.position = Vec3.add(
         self^.player.position,
@@ -200,7 +205,7 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => (
             .properties = &level_model^.properties,
         ) is :Some collision then (
             if type_index == 1 then (
-                restart(self);
+                self^.dead = true;
             );
             let volume = min(abs(collision.velocity_along_normal) / 50, 1);
             if volume > 0.1 then (
@@ -322,6 +327,8 @@ const handle_mmo = (self :: &mut Game) => (
                 },
                 .dragon_scales = respawn_dragon_scales(),
                 .next_send = 0,
+                .dead = false,
+                .dead_timer = 0,
                 .assets,
                 .water,
                 .model_renderer = Model.Renderer.init(),
@@ -341,7 +348,7 @@ const handle_mmo = (self :: &mut Game) => (
             with Model.Renderer.Ctx = self^.model_renderer;
             with Model.PlayerCtx = {
                 .position = self^.player.position,
-                .radius = self^.player.scale,
+                .radius = if self^.dead then 0 else self^.player.scale,
             };
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
                 self^.camera,
@@ -364,7 +371,7 @@ const handle_mmo = (self :: &mut Game) => (
                     |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(geng.time_since_start() * 90)));
                 Model.draw(self^.assets.models.dragon_scale, false, matrix);
             );
-            (
+            if not self^.dead then (
                 with Model.PlayerCtx = {
                     .position = self^.player.position,
                     .radius = 0,
@@ -489,6 +496,13 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => with_return (
+            let delta_time = min(delta_time, 0.050);
+            if self^.dead then (
+                self^.dead_timer += delta_time;
+                if self^.dead_timer > 1 then (
+                    restart(self);
+                );
+            );
             const MUSIC_FADE_TIME = 5;
             geng.audio.Effect.set_volume(
                 self^.assets.music,
@@ -533,7 +547,6 @@ const handle_mmo = (self :: &mut Game) => (
                 self^.next_send = 1 / 10;
                 send_update(self);
             );
-            let delta_time = min(delta_time, 0.050);
             if self^.timer is :Working ref mut time then (
                 time^ += delta_time;
             );
