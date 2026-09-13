@@ -32,6 +32,7 @@ jobs:
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
+          debug: true
           host: 15.204.212.176
           username: ubuntu
           key: ${{ secrets.DEPLOY_KEY }}
