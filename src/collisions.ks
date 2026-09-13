@@ -42,7 +42,7 @@ const Chunk = newtype {
     .faces :: ArrayList.t[Face],
 };
 
-const CHUNK_SIZE :: Float32 = 4;
+const CHUNK_SIZE :: Float32 = 10;
 
 impl Chunk as module = (
     module:

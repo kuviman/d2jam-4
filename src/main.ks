@@ -20,6 +20,9 @@ const Entity = newtype {
     .scale :: Float32,
 };
 
+const player_speed = 15;
+const player_acceleration = 20;
+
 const MIN_SCALE = 1;
 const MAX_SCALE = 2;
 
@@ -105,6 +108,21 @@ const restart = (self :: &mut Game) => (
 );
 
 const update_step = (self :: &mut Game, delta_time :: Float32) => (
+    let old_z = self^.player.position.2;
+    self^.player.position = Vec3.add(
+        self^.player.position,
+        Vec3.mul(self^.player.velocity, delta_time),
+    );
+    let new_z = self^.player.position.2;
+    if old_z >= 0 and new_z < 0 or old_z < 0 and new_z >= 0 then (
+        let volume = min(abs(self^.player.velocity.2) / player_speed * 2 - 1, 1);
+        if volume > 0.1 then (
+            geng.audio.play_with(
+                self^.assets.sfx.splash,
+                { .volume, .@"loop" = false },
+            );
+        );
+    );
     let mut max_speed = MAX_SPEED;
     let scale_dir = if not self^.jetpack_enabled and geng.input.Key.is_pressed(:Space) then (
         if self^.player.scale < MAX_SCALE then (
@@ -424,8 +442,6 @@ const handle_mmo = (self :: &mut Game) => (
                     self^.timer = :Working 0;
                 );
             );
-            let player_speed = 15;
-            let player_acceleration = 20;
             if self^.jetpack_enabled then (
                 let target_velocity :: Vec3 = {
                     ...Vec2.rotate(
@@ -553,27 +569,13 @@ const handle_mmo = (self :: &mut Game) => (
                 )
             )
                 |> Quat.normalize;
-            let old_z = self^.player.position.2;
-            self^.player.position = Vec3.add(
-                self^.player.position,
-                Vec3.mul(self^.player.velocity, delta_time),
-            );
-            let new_z = self^.player.position.2;
-            if old_z >= 0 and new_z < 0 or old_z < 0 and new_z >= 0 then (
-                let volume = min(abs(self^.player.velocity.2) / player_speed * 2 - 1, 1);
-                if volume > 0.1 then (
-                    geng.audio.play_with(
-                        self^.assets.sfx.splash,
-                        { .volume, .@"loop" = false },
-                    );
-                );
-            );
             self^.next_physics -= delta_time;
-            const TPS :: Float32 = 100;
-            const STEP = 1 / TPS;
-            while self^.next_physics < STEP do (
-                update_step(self, STEP);
-                self^.next_physics += STEP;
+            while self^.next_physics < -0.0001 do (
+                const MAX_DISTANCE_A_FRAME = 0.2;
+                let max_delta_time = MAX_DISTANCE_A_FRAME / max(Vec3.length(self^.player.velocity), 0.1);
+                let step = min(max_delta_time, -self^.next_physics);
+                update_step(self, step);
+                self^.next_physics += step;
             );
         ),
         .handle_event = (self, event) => (
