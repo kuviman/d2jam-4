@@ -4,8 +4,6 @@ use (import "./model.ks").*;
 
 const badcop = import "../net/bindings.ks";
 
-const interop = import "./interop.ks";
-const client = import "./client.ks";
 const collisions = import "./collisions.ks";
 
 const FINISH :: Vec3 = { -120.198761, -1.251943, 147.323959 };
@@ -57,7 +55,8 @@ impl Entity as module = (
 const OtherPlayer = newtype {
     .skin :: Int32,
     .position :: Vec3,
-    .rotation :: Angle,
+    .rotation :: Quat,
+    .scale :: Float32,
 };
 
 impl OtherPlayer as module = (
@@ -69,7 +68,8 @@ impl OtherPlayer as module = (
             assets.models.skins.[entity^.skin],
             false,
             Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
-                |> Mat4.mul_mat(Mat4.rotate_z(entity^.rotation))
+                |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
+                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
         );
     );
 );
@@ -87,7 +87,7 @@ const Game = newtype {
     .model_renderer :: Model.Renderer,
     .water :: Model.t,
     .player :: Entity,
-    .other_players :: OrdMap.t[interop.Id, OtherPlayer],
+    .other_players :: OrdMap.t[badcop.Id, OtherPlayer],
     .jetpack_enabled :: Bool,
     .cheated :: Bool,
     .jetpack_sfx :: geng.audio.Effect,
@@ -95,6 +95,7 @@ const Game = newtype {
     .timer :: TimerState,
     .next_physics :: Float32,
     .dragon_scales :: ArrayList.t[Vec3],
+    .next_send :: Float32,
 };
 
 const reset_player = (.skin) -> Entity => {
@@ -176,16 +177,41 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => (
     self^.player.velocity = Vec3.clamp_len(self^.player.velocity, max_speed);
 );
 
+const send_update = (self :: &mut Game) => (
+    badcop.send_update({
+        .position = self^.player.position,
+        .velocity = self^.player.velocity,
+        .rotation = self^.player.rotation,
+        .skin = self^.player.skin,
+        .jetpack = self^.jetpack_enabled,
+    });
+);
+
 const handle_mmo = (self :: &mut Game) => (
     while badcop.poll_message() is :Some msg do (
         match msg with (
-            | :Connected => (
-                print("Player connected");
+            | :Connected id => (
+                print("Player connected: " + to_string(id));
+                let player = {
+                    .skin = 0,
+                    .position = { 0, 0, 0 },
+                    .rotation = Quat.IDENTITY,
+                    .scale = 1,
+                };
+                &mut self^.other_players |> OrdMap.add(id, player);
             )
-            | :Disconnected => (
-                print("Player disconnected");
+            | :Disconnected id => (
+                print("Player disconnected: " + to_string(id));
+                &mut self^.other_players |> OrdMap.remove(id);
             )
-            | :UpdatePlayer => ()
+            | :UpdatePlayer { .id, .data } => (
+                let player = &mut self^.other_players
+                    |> OrdMap.get_mut(id)
+                    |> Option.unwrap;
+                player^.position = data.position;
+                player^.skin = data.skin;
+                player^.rotation = data.rotation;
+            )
         )
     );
 
@@ -269,6 +295,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .fov = Angle.from_degrees(90),
                 },
                 .dragon_scales,
+                .next_send = 0,
                 .assets,
                 .water,
                 .model_renderer = Model.Renderer.init(),
@@ -433,6 +460,11 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => with_return (
+            self^.next_send -= delta_time;
+            if self^.next_send < 0 then (
+                self^.next_send = 1 / 10;
+                send_update(self);
+            );
             let delta_time = min(delta_time, 0.050);
             if self^.timer is :Working ref mut time then (
                 time^ += delta_time;

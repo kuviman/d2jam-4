@@ -70,13 +70,13 @@ TcsSocket client_socket = TCS_SOCKET_INVALID;
 UserData user = {};
 struct TcsPollEvent ev[1] = {};
 
-TcsResult badcop_send_update(ClientMsgUpdate *update) {
+TcsResult badcop_send_update(ClientMsgUpdate update) {
       struct __attribute__((packed)) {
       ClientMsgTag tag;
       ClientMsgUpdate data;
     } msg = {
       .tag = ClientUpdate,
-      .data = *update
+      .data = update
     };
     return tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
 }

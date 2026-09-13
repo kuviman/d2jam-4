@@ -41,6 +41,7 @@ const ServerMessage = newtype (
     | :Disconnected Id
     | :UpdatePlayer {
         .id :: Id,
+        .data :: PlayerData,
     }
 );
 
@@ -54,13 +55,36 @@ const poll_message = () -> Option.t[ServerMessage] => with_return (
     if @native "\(tag) == ServerUpdatePlayer" then (
         let data :: @opaque_type "ServerMsgUpdatePlayer*" = @native "\(data)";
         return :Some :UpdatePlayer {
+            .id = @native "\(data)->id",
+            .data = {
+                .position = {
+                    @native "\(data)->stuff.px",
+                    @native "\(data)->stuff.py",
+                    @native "\(data)->stuff.pz",
+                },
+                .velocity = {
+                    @native "\(data)->stuff.vx",
+                    @native "\(data)->stuff.vy",
+                    @native "\(data)->stuff.vz",
+                },
+                .rotation = {
+                    .i = @native "\(data)->stuff.rx",
+                    .j = @native "\(data)->stuff.ry",
+                    .k = @native "\(data)->stuff.rz",
+                    .w = @native "\(data)->stuff.rw",
+                },
+                .skin = @native "\(data)->stuff.skin",
+                .jetpack = @native "\(data)->stuff.jetpack != 0",
+            },
         };
     );
     if @native "\(tag) == ServerConnected" then (
-        return :Some :Connected;
+        let data :: @opaque_type "ServerMsgConnected*" = @native "\(data)";
+        return :Some :Connected (@native "\(data)->id");
     );
     if @native "\(tag) == ServerDisconnected" then (
-        return :Some :Disconnected;
+        let data :: @opaque_type "ServerMsgDisconnected*" = @native "\(data)";
+        return :Some :Disconnected (@native "\(data)->id");
     );
     panic("Unrecognized tag in server message")
 );
