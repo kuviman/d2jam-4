@@ -46,6 +46,8 @@ int show_error(const char* error_text)
     return -1;
 }
 
+int connected = 0;
+
 #define RECV_BUFSIZE 1024
 typedef struct UserData {
   size_t start;
@@ -78,7 +80,42 @@ TcsResult badcop_send_update(ClientMsgUpdate update) {
       .tag = ClientUpdate,
       .data = update
     };
-    return tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+    TcsResult res = tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+    if (res != TCS_SUCCESS) {
+      connected = 0;
+    }
+    return res;
+}
+
+TcsResult badcop_set_name(const char *name) {
+      struct __attribute__((packed)) {
+      ClientMsgTag tag;
+      ClientMsgSetName data;
+    } msg = {
+      .tag = ClientSetName,
+      .data = {0},
+    };
+    strncpy(&msg.data.name, name, MAX_NAME_LEN);
+    TcsResult res = tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+    if (res != TCS_SUCCESS) {
+      connected = 0;
+    }
+    return res;
+}
+
+TcsResult badcop_beat_game(unsigned long long duration) {
+      struct __attribute__((packed)) {
+      ClientMsgTag tag;
+      ClientMsgBeatGame data;
+    } msg = {
+      .tag = ClientBeatGame,
+      .data = { .duration = duration },
+    };
+    TcsResult res = tcs_send(client_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
+      if (res != TCS_SUCCESS) {
+      connected = 0;
+    }
+    return res;
 }
 
 /***
@@ -93,10 +130,13 @@ void _recv_next() {
       TcsResult res = tcs_receive(client_socket, user.buf + user.end, RECV_BUFSIZE - user.end, TCS_FLAG_NONE, &received_size);
       switch (res) {
         case TCS_SUCCESS:
-        user.end += received_size;
-        break;
+          user.end += received_size;
+          break;
         case TCS_ERROR_WOULD_BLOCK:
         break;
+        default:
+          connected = 0;
+          break;
       }
   }
 }
@@ -118,6 +158,10 @@ void *badcop_poll_msg() {
           break;
         case ServerConnected:
           if (msg = has_full_message(&user, sizeof(ServerMsgConnected), NULL))
+            return msg;
+          break;
+        case ServerPlayerMeta:
+          if (msg = has_full_message(&user, sizeof(ServerMsgPlayerMeta), NULL))
             return msg;
           break;
         case ServerDisconnected:
@@ -151,9 +195,13 @@ int badcop_init(char *conn_str)
     if (tcs_socket_tcp_str(&client_socket, NULL, conn_str, 1000) != TCS_SUCCESS)
         return show_error("Could not create a socket");
 
+    connected = 1;
+
+    #ifndef __EMSCRIPTEN__
     tcs_opt_nonblocking_set(client_socket, true);
     tcs_opt_ip_no_delay_set(client_socket, true);
-    
+    #endif
+
     tcs_poll_create(&tcs_poll);
     tcs_poll_add(tcs_poll, client_socket, NULL, TCS_POLL_READ);
 }

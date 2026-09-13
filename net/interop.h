@@ -2,10 +2,14 @@ typedef enum ServerMsgTag {
   ServerUpdatePlayer,
   ServerConnected,
   ServerDisconnected,
-  ServerRequestUpdate
+  ServerPlayerMeta
 } ServerMsgTag;
 
-typedef enum ClientMsgTag { ClientUpdate } ClientMsgTag;
+typedef enum ClientMsgTag { 
+  ClientUpdate,
+  ClientBeatGame,
+  ClientSetName
+ } ClientMsgTag;
 
 typedef struct __attribute__((packed)) {
   unsigned long long id;
@@ -14,9 +18,6 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
   unsigned long long id;
 } ServerMsgDisconnected;
-
-typedef struct __attribute__((packed)) {
-} ServerMsgRequestUpdate;
 
 typedef struct __attribute__((packed)) {
   float px;
@@ -38,6 +39,21 @@ typedef struct __attribute__((packed)) {
   int jetpack;
   float scale;
 } ClientMsgUpdate;
+
+typedef struct __attribute__((packed)) {
+  unsigned long long duration;
+} ClientMsgBeatGame;
+
+#define MAX_NAME_LEN 24
+typedef struct __attribute__((packed)) {
+  char name[MAX_NAME_LEN + 1];
+} ClientMsgSetName;
+
+typedef struct __attribute__((packed)) {
+  unsigned long long id;
+  unsigned long long best_time;
+  char name[MAX_NAME_LEN + 1];
+} ServerMsgPlayerMeta;
 
 typedef struct __attribute__((packed)) {
   unsigned long long id;

@@ -39,7 +39,7 @@ typedef struct UserData {
 
 typedef struct PlayerData {
   ClientMsgUpdate data;
-  unsigned long long id;
+  ServerMsgPlayerMeta meta;
   int is_valid;
   TcsSocket socket;
 } PlayerData;
@@ -61,11 +61,11 @@ static int show_error(const char* error_text)
     return -1;
 }
 
-void broadcast(struct TcsPoll* poll, const uint8_t *msg, size_t msg_size) {
+void broadcast(struct TcsPoll* poll, const uint8_t *msg, size_t msg_size, unsigned long long ignore) {
   for (size_t i = 0; i < MAX_CONNECTIONS; ++i) {
-    if (pdata[i].is_valid) {
+    if (pdata[i].is_valid && pdata[i].meta.id != ignore) {
       tcs_send(pdata[i].socket, msg, msg_size, TCS_MSG_SENDALL, NULL);
-      LOG_DEBUG("Sending broadcast to %llu\n", pdata[i].id);
+      LOG_DEBUG("Sending broadcast to %llu\n", pdata[i].meta.id);
     }
   }
 }
@@ -83,7 +83,7 @@ void disconnect(struct TcsPoll* poll, TcsSocket socket, UserData* user_data) {
       }
     };
     pdata[user_data->pidx].is_valid = false;
-    broadcast(poll, (const uint8_t*)&msg, sizeof(msg));
+    broadcast(poll, (const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
     free(user_data);
 }
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
           }
         };
 
-        broadcast(poll, (const uint8_t*)&msg, sizeof(msg));
+        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), client_id);
         
         UserData *data = (UserData*)calloc(1, sizeof(UserData));
         data->id = client_id;
@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
             break;
           }
         }
-        pdata[p].id = client_id;
+        pdata[p].meta = (ServerMsgPlayerMeta){};
+        pdata[p].meta.id = client_id;
         pdata[p].socket = child_socket;
         pdata[p].data = (ClientMsgUpdate){};
         pdata[p].is_valid = 1;
@@ -165,11 +166,11 @@ int main(int argc, char *argv[])
           } msg = {
             .tag = ServerConnected,
             .data = {
-              .id = pdata[i].id,
+              .id = pdata[i].meta.id,
             }
           };
           tcs_send(child_socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
-          LOG_DEBUG("Sending existing client id %llu to %llu\n", pdata[i].id, data->id);
+          LOG_DEBUG("Sending existing client id %llu to %llu\n", pdata[i].meta.id, data->id);
         }
 
         // add to our poll list
@@ -202,6 +203,40 @@ int main(int argc, char *argv[])
               int looping = 1;
               while(looping && user->start <= user->end + 4) {
                 switch(user->buf[user->start]) {
+                  case ClientBeatGame: {
+                    ClientMsgBeatGame* msg;
+                    if (msg = has_full_message(user, sizeof(ClientMsgBeatGame), &looping)) {
+                      if (msg->duration < pdata[user->pidx].meta.best_time) {
+                        pdata[user->pidx].meta.best_time = msg->duration;
+                        // send a world update to other players
+                        struct __attribute__((packed)) {
+                          ServerMsgTag tag;
+                          ServerMsgPlayerMeta data;
+                        } msg = {
+                          .tag = ServerPlayerMeta,
+                          .data = pdata[user->pidx].meta,
+                        };
+                        broadcast(poll, &msg, sizeof(msg), pdata[user->pidx].meta.id);
+                      }
+                    }
+                    break;
+                  }
+                  case ClientSetName: {
+                    ClientMsgSetName* msg;
+                    if (msg = has_full_message(user, sizeof(ClientMsgSetName), &looping)) {
+                        strncpy(&pdata[user->pidx].meta.name, msg->name, MAX_NAME_LEN);
+                        // send a world update to other players
+                        struct __attribute__((packed)) {
+                          ServerMsgTag tag;
+                          ServerMsgPlayerMeta data;
+                        } msg = {
+                          .tag = ServerPlayerMeta,
+                          .data = pdata[user->pidx].meta,
+                        };
+                        broadcast(poll, &msg, sizeof(msg), pdata[user->pidx].meta.id);
+                    }
+                    break;
+                  }
                   case ClientUpdate: {
                     ClientMsgUpdate* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgUpdate), &looping)) {
@@ -211,14 +246,14 @@ int main(int argc, char *argv[])
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
-                        if (pdata[j].id == user->id) continue;
+                        if (pdata[j].meta.id == user->id) continue;
                         struct __attribute__((packed)) {
                           ServerMsgTag tag;
                           ServerMsgUpdatePlayer data;
                         } msg = {
                           .tag = ServerUpdatePlayer,
                           .data = {
-                            .id = pdata[j].id,
+                            .id = pdata[j].meta.id,
                             .stuff = pdata[j].data,
                           }
                         };
