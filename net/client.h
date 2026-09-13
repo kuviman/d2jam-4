@@ -160,7 +160,7 @@ int badcop_init(char *conn_str)
     if (tcs_lib_init() != TCS_SUCCESS)
         return show_error("Could not init tinycsocket");   
 
-    if (tcs_socket_tcp_str(&client_socket, NULL, conn_str, 1000) != TCS_SUCCESS)
+    if (tcs_socket_tcp_str(&client_socket, NULL, conn_str, 10000) != TCS_SUCCESS)
         return show_error("Could not create a socket");
 
     connected = 1;

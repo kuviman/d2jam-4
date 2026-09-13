@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
           }
         };
 
-        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), client_id);
+        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
         
         UserData *data = (UserData*)calloc(1, sizeof(UserData));
         data->id = client_id;
