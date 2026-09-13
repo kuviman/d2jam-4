@@ -37,4 +37,4 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
           source: "dist/server"
-          target: "/root/."
+          target: "/home/ubuntu/."
