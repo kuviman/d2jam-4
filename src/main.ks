@@ -2,6 +2,8 @@ use (import "lib/_lib.ks").*;
 use (import "./assets.ks").*;
 use (import "./model.ks").*;
 
+const badcop = import "../net/bindings.ks";
+
 const interop = import "./interop.ks";
 const client = import "./client.ks";
 const collisions = import "./collisions.ks";
@@ -175,6 +177,19 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => (
 );
 
 const handle_mmo = (self :: &mut Game) => (
+    while badcop.poll_message() is :Some msg do (
+        match msg with (
+            | :Connected => (
+                print("Player connected");
+            )
+            | :Disconnected => (
+                print("Player disconnected");
+            )
+            | :UpdatePlayer => ()
+        )
+    );
+
+    @comment_out (
     while client.poll_message() is :Some msg do (
         match msg with (
             | :Connected id => (
@@ -202,6 +217,7 @@ const handle_mmo = (self :: &mut Game) => (
                 client.send(:Update { .position = self^.player.position });
             )
         )
+    );
     );
 );
 
@@ -243,6 +259,7 @@ const handle_mmo = (self :: &mut Game) => (
             &mut dragon_scales |> ArrayList.push_back({ -138.585251, -59.781757, 47.580807 });
             &mut dragon_scales |> ArrayList.push_back({ -80.768204, 0.142232, 101.941040 });
             &mut dragon_scales |> ArrayList.push_back({ -71.015900, 28.825523, 25.515934 });
+            &mut dragon_scales |> ArrayList.push_back({ -25.596405, -4.421812, 117.133064 });
             {
                 .camera = {
                     .position = { 0, 0, 5 },
@@ -420,7 +437,7 @@ const handle_mmo = (self :: &mut Game) => (
             if self^.timer is :Working ref mut time then (
                 time^ += delta_time;
             );
-            # handle_mmo(self);
+            handle_mmo(self);
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
             if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < self^.player.scale then (
                 if self^.timer is :Working t then (
@@ -655,6 +672,7 @@ if args.server is :Some address then (
 );
 );
 if args.connect is :Some address then (
+    badcop.init(address);
     # let c = client.connect(address);
     # with client.Ctx = c;
     geng.run[Game]();

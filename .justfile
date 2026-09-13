@@ -9,6 +9,7 @@ build-c source="src/main.ks":
 
 build-native:
     ${CC:-gcc} \
+        -I. \
         -pthread \
         -lm -lgc -lSDL3 -lSDL3_image -lSDL3_mixer -lGL -lGLEW -lbacktrace \
         -Wfatal-errors \

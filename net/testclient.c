@@ -33,7 +33,7 @@ int main(void)
     fcntl (0, F_SETFL, O_NONBLOCK);
     char c = 0;
 
-    init("127.0.0.1:8080");
+    badcop_init("127.0.0.1:8080");
 
     while (main) {
       if (read (0, &c, 1) && c == '\n') {
@@ -43,7 +43,7 @@ int main(void)
           .py = 10.0,
           .pz = -1.0,
         };
-        TcsResult res = send_update(&update);
+        TcsResult res = badcop_send_update(&update);
         if (res != TCS_SUCCESS) {
           return show_error("Failed to send to server");
         }
@@ -51,7 +51,7 @@ int main(void)
 
       // drain messages
       void *msg = NULL;
-      while(msg = poll_msg()) {
+      while(msg = badcop_poll_msg()) {
         handle_message(msg);
       }
     }

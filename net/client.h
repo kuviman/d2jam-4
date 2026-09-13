@@ -50,7 +50,7 @@ int show_error(const char* error_text)
 typedef struct UserData {
   size_t start;
   size_t end;
-  char buf[RECV_BUFSIZE];
+  uint8_t buf[RECV_BUFSIZE];
 } UserData;
 
 void * has_full_message(UserData* user, size_t n, int* looping) {
@@ -70,7 +70,7 @@ TcsSocket client_socket = TCS_SOCKET_INVALID;
 UserData user = {};
 struct TcsPollEvent ev[1] = {};
 
-TcsResult send_update(ClientMsgUpdate *update) {
+TcsResult badcop_send_update(ClientMsgUpdate *update) {
       struct __attribute__((packed)) {
       ClientMsgTag tag;
       ClientMsgUpdate data;
@@ -105,7 +105,7 @@ void _recv_next() {
  * Get one message from the server.
  * Returns NULL if there are no more messages available.
  */
-void *poll_msg() {
+void *badcop_poll_msg() {
     if (user.start == user.end) {
       _recv_next();
     }
@@ -143,7 +143,7 @@ void *poll_msg() {
 /***
  * Call to open a socket to the server.
  */
-int init(char *conn_str)
+int badcop_init(char *conn_str)
 {
     if (tcs_lib_init() != TCS_SUCCESS)
         return show_error("Could not init tinycsocket");   
