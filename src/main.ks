@@ -92,6 +92,7 @@ const Game = newtype {
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
     .timer :: TimerState,
     .next_physics :: Float32,
+    .dragon_scales :: ArrayList.t[Vec3],
 };
 
 const reset_player = (.skin) -> Entity => {
@@ -236,6 +237,12 @@ const handle_mmo = (self :: &mut Game) => (
                     .buffer = ugli.VertexBuffer.init(&data),
                 }
             );
+            let mut dragon_scales = ArrayList.new();
+            &mut dragon_scales |> ArrayList.push_back({ -166.625580, -0.227342, 21.092628 });
+            &mut dragon_scales |> ArrayList.push_back({ 46.816666, -0.005385, 0.049985 });
+            &mut dragon_scales |> ArrayList.push_back({ -138.585251, -59.781757, 47.580807 });
+            &mut dragon_scales |> ArrayList.push_back({ -80.768204, 0.142232, 101.941040 });
+            &mut dragon_scales |> ArrayList.push_back({ -71.015900, 28.825523, 25.515934 });
             {
                 .camera = {
                     .position = { 0, 0, 5 },
@@ -244,6 +251,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .rotation = Angle.from_degrees(0),
                     .fov = Angle.from_degrees(90),
                 },
+                .dragon_scales,
                 .assets,
                 .water,
                 .model_renderer = Model.Renderer.init(),
@@ -287,6 +295,11 @@ const handle_mmo = (self :: &mut Game) => (
             );
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
+            );
+            for &pos in &self^.dragon_scales |> ArrayList.iter do (
+                let matrix = Mat4.translate(pos)
+                    |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(geng.time_since_start() * 90)));
+                Model.draw(self^.assets.models.dragon_scale, false, matrix);
             );
             Model.draw(self^.water, true, Mat4.IDENTITY);
 

@@ -86,6 +86,7 @@ const Assets = (
         .level :: ArrayList.t[LevelModel],
         .level_nocollisions :: ArrayList.t[Model.t],
         .jetpack :: Model.t,
+        .dragon_scale :: Model.t,
     };
 
     const load = () -> t => (
@@ -159,6 +160,7 @@ const Assets = (
                 list
             ),
             .jetpack = Model.load("assets/models/jetpack"),
+            .dragon_scale = Model.load("assets/models/collectable/dragonScale"),
         };
 
         {
