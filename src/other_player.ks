@@ -46,6 +46,8 @@ const OtherPlayer = newtype {
     .rotation :: Interpolated[Quat],
     .scale :: Interpolated[Float32],
     .jetpack :: Bool,
+    .flat_rot :: Angle,
+    .vel :: Vec3,
 };
 
 const PREDICTION_T :: Float32 = 0.3;
@@ -59,6 +61,8 @@ impl OtherPlayer as module = (
         .rotation = init_interpolated(Quat.IDENTITY),
         .scale = init_interpolated(0),
         .jetpack = false,
+        .flat_rot = Angle.from_degrees(0),
+        .vel = { 0, 0, 0 },
     };
 
     const update_net = (self :: &mut OtherPlayer, data :: badcop.PlayerData) => (
@@ -73,21 +77,27 @@ impl OtherPlayer as module = (
         update_interpolated(&mut self^.position, delta_time);
         update_interpolated(&mut self^.rotation, delta_time);
         update_interpolated(&mut self^.scale, delta_time);
-    );
-
-    const draw = (self :: &OtherPlayer) => (
-        let mut vel = { 0, 0, 0 };
         if self^.position.time_remaining > 0.001 then (
-            vel = Vec3.div(
+            self^.vel = Vec3.div(
                 Vec3.sub(self^.position.target_value, self^.position.value),
                 self^.position.time_remaining,
             );
+        ) else (
+            self^.vel = { 0, 0, 0 };
         );
+        let xy = Vec3.xy(self^.vel);
+        if abs(xy.0) + abs(xy.1) > 0.001 then (
+            self^.flat_rot = Vec2.arg(xy);
+        );
+    );
+
+    const draw = (self :: &OtherPlayer) => (
         draw_skin(
             self^.skin,
             self^.position.value,
-            vel,
+            self^.vel,
             self^.scale.value,
+            self^.flat_rot,
             self^.rotation.value,
             .jetpack = self^.jetpack,
         );

@@ -14,6 +14,7 @@ const Entity = newtype {
     .skin :: Int32,
     .position :: Vec3,
     .velocity :: Vec3,
+    .flat_rot :: Angle,
     .rotation :: Quat,
     .angular_velocity :: Vec3,
     .can_jump :: Bool,
@@ -37,6 +38,7 @@ impl Entity as module = (
             self^.position,
             self^.velocity,
             self^.scale,
+            self^.flat_rot,
             self^.rotation,
             .jetpack,
         );
@@ -48,16 +50,27 @@ const draw_skin = (
     position :: Vec3,
     velocity :: Vec3,
     scale :: Float32,
+    flat_rot :: Angle,
     rotation :: Quat,
     .jetpack :: Bool,
 ) => (
     let assets = @current Assets.Ctx;
+    if jetpack then (
+        let angle = Angle.from_degrees(1000 * geng.time_since_start());
+        Model.draw(
+            if skin == 5 then assets.models.badarms else assets.models.jetpack,
+            false,
+            Mat4.translate(position)
+                |> Mat4.mul_mat(Mat4.rotate(Vec3.cross({ 0, 0, 1 }, velocity), Angle.from_degrees(30 / player_speed)))
+                |> Mat4.mul_mat(Mat4.rotate_z(angle)),
+        );
+    );
     if skin == 16 then (
         Model.draw(
             assets.models.wormy,
             false,
-            Mat4.translate(position)
-                |> Mat4.mul_mat(Mat4.scale_uniform(scale)),
+            Mat4.translate(Vec3.add(position, { 0, 0, -scale + MIN_SCALE }))
+                |> Mat4.mul_mat(Mat4.rotate_z(flat_rot)),
         );
     );
     if not jetpack or skin != 5 then (
@@ -67,16 +80,6 @@ const draw_skin = (
             Mat4.translate(position)
                 |> Mat4.mul_mat(Mat4.scale_uniform(scale))
                 |> Mat4.mul_mat(Quat.into_mat4(rotation)),
-        );
-    );
-    if jetpack then (
-        let angle = Angle.from_degrees(1000 * geng.time_since_start());
-        Model.draw(
-            if skin == 5 then assets.models.badarms else assets.models.jetpack,
-            false,
-            Mat4.translate(position)
-                |> Mat4.mul_mat(Mat4.rotate(Vec3.cross({ 0, 0, 1 }, velocity), Angle.from_degrees(30 / player_speed)))
-                |> Mat4.mul_mat(Mat4.rotate_z(angle)),
         );
     );
 );
@@ -134,6 +137,7 @@ const reset_player = (.skin) -> Entity => {
     .position = { 0, 0, 10 },
     .velocity = { 0, 0, 0 },
     .rotation = Quat.IDENTITY,
+    .flat_rot = Angle.from_degrees(0),
     .angular_velocity = { 0, 0, 0 },
     .skin,
     .can_jump = false,
@@ -351,7 +355,15 @@ const handle_mmo = (self :: &mut Game) => (
             for &model in &self^.assets.models.level_nocollisions |> ArrayList.iter do (
                 Model.draw(model, false, Mat4.IDENTITY);
             );
-            @native "glDisable(GL_CULL_FACE)";
+            # @native "glDisable(GL_CULL_FACE)";
+            for scale in &self^.dragon_scales |> ArrayList.iter do (
+                if scale^.collected then (
+                    continue;
+                );
+                let matrix = Mat4.translate(scale^.position)
+                    |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(geng.time_since_start() * 90)));
+                Model.draw(self^.assets.models.dragon_scale, false, matrix);
+            );
             (
                 with Model.PlayerCtx = {
                     .position = self^.player.position,
@@ -361,14 +373,6 @@ const handle_mmo = (self :: &mut Game) => (
             );
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
-            );
-            for scale in &self^.dragon_scales |> ArrayList.iter do (
-                if scale^.collected then (
-                    continue;
-                );
-                let matrix = Mat4.translate(scale^.position)
-                    |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(geng.time_since_start() * 90)));
-                Model.draw(self^.assets.models.dragon_scale, false, matrix);
             );
             Model.draw(self^.water, true, Mat4.IDENTITY);
 
@@ -577,6 +581,7 @@ const handle_mmo = (self :: &mut Game) => (
                 if self^.timer is :WaitForMove then (
                     self^.timer = :Working 0;
                 );
+                self^.player.flat_rot = Angle.add(Vec2.arg(wasd), self^.camera.rotation);
             );
             if self^.jetpack_enabled then (
                 let target_velocity :: Vec3 = {
