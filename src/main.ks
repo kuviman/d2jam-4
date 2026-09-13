@@ -33,22 +33,30 @@ impl Entity as module = (
 
     const draw = (entity :: &Entity, .jetpack :: Bool) => (
         let assets = @current Assets.Ctx;
-        Model.draw(
-            assets.models.skins.[entity^.skin],
-            false,
-            Mat4.translate(entity^.position)
-                |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
-                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
-        );
-        if jetpack then (
-            let angle = Angle.from_degrees(1000 * geng.time_since_start());
+        if not jetpack or entity^.skin != 5 then (
             Model.draw(
-                assets.models.jetpack,
+                assets.models.skins.[entity^.skin],
                 false,
                 Mat4.translate(entity^.position)
-                    |> Mat4.mul_mat(Mat4.rotate_z(angle)),
+                    |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
+                    |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
             );
         );
+        if jetpack then (
+            draw_jetpack(entity^.position, entity^.velocity, entity^.skin);
+        );
+    );
+);
+
+const draw_jetpack = (pos :: Vec3, vel :: Vec3, skin :: Int32) => (
+    let assets = @current Assets.Ctx;
+    let angle = Angle.from_degrees(1000 * geng.time_since_start());
+    Model.draw(
+        if skin == 5 then assets.models.badarms else assets.models.jetpack,
+        false,
+        Mat4.translate(pos)
+            |> Mat4.mul_mat(Mat4.rotate(Vec3.cross({ 0, 0, 1 }, Vec3.clamp_len(vel, 1)), Angle.from_degrees(30 / player_speed)))
+            |> Mat4.mul_mat(Mat4.rotate_z(angle)),
     );
 );
 

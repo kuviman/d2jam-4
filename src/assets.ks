@@ -89,6 +89,7 @@ const Assets = (
         .level :: ArrayList.t[LevelModel],
         .level_nocollisions :: ArrayList.t[Model.t],
         .jetpack :: Model.t,
+        .badarms :: Model.t,
         .dragon_scale :: Model.t,
     };
 
@@ -173,6 +174,7 @@ const Assets = (
             ),
             .jetpack = Model.load("assets/models/jetpack"),
             .dragon_scale = Model.load("assets/models/collectable/dragonScale"),
+            .badarms = Model.load("assets/models/player/badball/arms"),
         };
 
         {
