@@ -11,8 +11,10 @@ const PlayerData = newtype {
     .position :: Vec3,
     .velocity :: Vec3,
     .rotation :: Quat,
+    .angular_velocity :: Vec3,
     .skin :: Int32,
     .jetpack :: Bool,
+    .scale :: Float32,
 };
 
 const send_update = (u :: PlayerData) => (
@@ -28,7 +30,13 @@ const send_update = (u :: PlayerData) => (
             .ry = \(u.rotation.j),
             .rz = \(u.rotation.k),
             .rw = \(u.rotation.w),
+            .angular_vel = {
+                .x = \(u.angular_velocity.0),
+                .y = \(u.angular_velocity.1),
+                .z = \(u.angular_velocity.2),
+            },
             .skin = \(u.skin),
+            .scale = \(u.scale),
             .jetpack = \(if u.jetpack then 1 else 0),
         })
     '';
@@ -73,7 +81,13 @@ const poll_message = () -> Option.t[ServerMessage] => with_return (
                     .k = @native "\(data)->stuff.rz",
                     .w = @native "\(data)->stuff.rw",
                 },
+                .angular_velocity = {
+                    @native "\(data)->stuff.angular_vel.x",
+                    @native "\(data)->stuff.angular_vel.y",
+                    @native "\(data)->stuff.angular_vel.z",
+                },
                 .skin = @native "\(data)->stuff.skin",
+                .scale = @native "\(data)->stuff.scale",
                 .jetpack = @native "\(data)->stuff.jetpack != 0",
             },
         };

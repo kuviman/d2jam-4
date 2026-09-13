@@ -59,6 +59,7 @@ build-emscripten source="target/compiled/main.c":
         -s ASSERTIONS \
         -s ASYNCIFY \
         -s ASYNCIFY_STACK_SIZE=64MB \
+        -s WEBSOCKET_URL="wss://d2jam4.badcop.games" \
         -w
     # -s BINARYEN_EXTRA_PASSES='--spill-pointers' \
     # -sMAX_WEBGL_VERSION=2 \
@@ -69,15 +70,15 @@ build src="src/main.ks":
 
 run:
     LSAN_OPTIONS='suppresions=suppr.txt' \
-        ./target/compiled/main.exe --server 127.0.0.1:1234 --connect 127.0.0.1:1234
+        ./target/compiled/main.exe --server 127.0.0.1:1235 --connect 127.0.0.1:1235
 
 server:
     LSAN_OPTIONS='suppresions=suppr.txt' \
-        ./target/compiled/main.exe --server 127.0.0.1:1234
+        ./target/compiled/main.exe --server 127.0.0.1:1235
 
 client:
     LSAN_OPTIONS='suppresions=suppr.txt' \
-        ./target/compiled/main.exe --connect 127.0.0.1:1234
+        ./target/compiled/main.exe --connect 127.0.0.1:1235
 
 serve:
     just build-c

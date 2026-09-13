@@ -222,6 +222,7 @@
               SDL3_WEB = "${sdl3-web}";
               SDL3_IMAGE_WEB = "${sdl3-image-web}";
               SDL3_MIXER_WEB = "${sdl3-mixer-web}";
+              SERVER_ADDRESS = "d2jam4.badcop.games:5555";
             };
       });
 }

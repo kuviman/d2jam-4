@@ -9,6 +9,7 @@ impl Quat as module = (
     module:
 
     const IDENTITY :: Quat = { .i = 0, .j = 0, .k = 0, .w = 1 };
+    const ZERO :: Quat = { .i = 0, .j = 0, .k = 0, .w = 0 };
 
     const from_axis_angle = (axis :: Vec3, angle :: Angle) -> Quat => (
         let angle = Angle.div(angle, 2);

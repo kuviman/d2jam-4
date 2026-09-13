@@ -5,10 +5,7 @@ typedef enum ServerMsgTag {
   ServerRequestUpdate
 } ServerMsgTag;
 
-
-typedef enum ClientMsgTag {
-  ClientUpdate
-} ClientMsgTag;
+typedef enum ClientMsgTag { ClientUpdate } ClientMsgTag;
 
 typedef struct __attribute__((packed)) {
   unsigned long long id;
@@ -32,8 +29,14 @@ typedef struct __attribute__((packed)) {
   float ry;
   float rz;
   float rw;
+  struct {
+    float x;
+    float y;
+    float z;
+  } angular_vel;
   int skin;
   int jetpack;
+  float scale;
 } ClientMsgUpdate;
 
 typedef struct __attribute__((packed)) {

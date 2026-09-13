@@ -52,27 +52,7 @@ impl Entity as module = (
     );
 );
 
-const OtherPlayer = newtype {
-    .skin :: Int32,
-    .position :: Vec3,
-    .rotation :: Quat,
-    .scale :: Float32,
-};
-
-impl OtherPlayer as module = (
-    module:
-
-    const draw = (entity :: &OtherPlayer) => (
-        let assets = @current Assets.Ctx;
-        Model.draw(
-            assets.models.skins.[entity^.skin],
-            false,
-            Mat4.translate(Vec3.add(entity^.position, { 0, 0, 1 }))
-                |> Mat4.mul_mat(Mat4.scale_uniform(entity^.scale))
-                |> Mat4.mul_mat(Quat.into_mat4(entity^.rotation)),
-        );
-    );
-);
+include "./other_player.ks";
 
 const TimerState = newtype (
     | :WaitForMove
@@ -94,9 +74,32 @@ const Game = newtype {
     .flate_sfx :: Option.t[type { geng.audio.Effect, .dir :: Int32 }],
     .timer :: TimerState,
     .next_physics :: Float32,
-    .dragon_scales :: ArrayList.t[Vec3],
+    .dragon_scales :: ArrayList.t[DragonScale],
     .next_send :: Float32,
 };
+
+const DragonScale = newtype {
+    .position :: Vec3,
+    .collected :: Bool,
+};
+
+const respawn_dragon_scales = () => (
+    let mut dragon_scales = ArrayList.new();
+    let add = position => (
+        let scale = {
+            .position,
+            .collected = false,
+        };
+        &mut dragon_scales |> ArrayList.push_back(scale);
+    );
+    add({ -166.625580, -0.227342, 21.092628 });
+    add({ 46.816666, -0.005385, 0.049985 });
+    add({ -138.585251, -59.781757, 47.580807 });
+    add({ -80.768204, 0.142232, 101.941040 });
+    add({ -71.015900, 28.825523, 25.515934 });
+    add({ -25.596405, -4.421812, 117.133064 });
+    dragon_scales
+);
 
 const reset_player = (.skin) -> Entity => {
     .position = { 0, 0, 10 },
@@ -113,6 +116,7 @@ const restart = (self :: &mut Game) => (
     self^.timer = :WaitForMove;
     self^.cheated = false;
     self^.jetpack_enabled = false;
+    self^.dragon_scales = respawn_dragon_scales();
 );
 
 const is_jump_pressed = () => (
@@ -182,8 +186,10 @@ const send_update = (self :: &mut Game) => (
         .position = self^.player.position,
         .velocity = self^.player.velocity,
         .rotation = self^.player.rotation,
+        .angular_velocity = self^.player.angular_velocity,
         .skin = self^.player.skin,
         .jetpack = self^.jetpack_enabled,
+        .scale = self^.player.scale,
     });
 );
 
@@ -192,13 +198,7 @@ const handle_mmo = (self :: &mut Game) => (
         match msg with (
             | :Connected id => (
                 print("Player connected: " + to_string(id));
-                let player = {
-                    .skin = 0,
-                    .position = { 0, 0, 0 },
-                    .rotation = Quat.IDENTITY,
-                    .scale = 1,
-                };
-                &mut self^.other_players |> OrdMap.add(id, player);
+                &mut self^.other_players |> OrdMap.add(id, OtherPlayer.new());
             )
             | :Disconnected id => (
                 print("Player disconnected: " + to_string(id));
@@ -208,9 +208,7 @@ const handle_mmo = (self :: &mut Game) => (
                 let player = &mut self^.other_players
                     |> OrdMap.get_mut(id)
                     |> Option.unwrap;
-                player^.position = data.position;
-                player^.skin = data.skin;
-                player^.rotation = data.rotation;
+                OtherPlayer.update_net(player, data);
             )
         )
     );
@@ -279,13 +277,6 @@ const handle_mmo = (self :: &mut Game) => (
                     .buffer = ugli.VertexBuffer.init(&data),
                 }
             );
-            let mut dragon_scales = ArrayList.new();
-            &mut dragon_scales |> ArrayList.push_back({ -166.625580, -0.227342, 21.092628 });
-            &mut dragon_scales |> ArrayList.push_back({ 46.816666, -0.005385, 0.049985 });
-            &mut dragon_scales |> ArrayList.push_back({ -138.585251, -59.781757, 47.580807 });
-            &mut dragon_scales |> ArrayList.push_back({ -80.768204, 0.142232, 101.941040 });
-            &mut dragon_scales |> ArrayList.push_back({ -71.015900, 28.825523, 25.515934 });
-            &mut dragon_scales |> ArrayList.push_back({ -25.596405, -4.421812, 117.133064 });
             {
                 .camera = {
                     .position = { 0, 0, 5 },
@@ -294,7 +285,7 @@ const handle_mmo = (self :: &mut Game) => (
                     .rotation = Angle.from_degrees(0),
                     .fov = Angle.from_degrees(90),
                 },
-                .dragon_scales,
+                .dragon_scales = respawn_dragon_scales(),
                 .next_send = 0,
                 .assets,
                 .water,
@@ -340,8 +331,11 @@ const handle_mmo = (self :: &mut Game) => (
             for &{ .key = _, .value = ref other_player } in &self^.other_players |> OrdMap.iter do (
                 OtherPlayer.draw(other_player);
             );
-            for &pos in &self^.dragon_scales |> ArrayList.iter do (
-                let matrix = Mat4.translate(pos)
+            for scale in &self^.dragon_scales |> ArrayList.iter do (
+                if scale^.collected then (
+                    continue;
+                );
+                let matrix = Mat4.translate(scale^.position)
                     |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(geng.time_since_start() * 90)));
                 Model.draw(self^.assets.models.dragon_scale, false, matrix);
             );
@@ -460,6 +454,14 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => with_return (
+            for &mut { .key = _, .value = ref mut o } in &mut self^.other_players |> OrdMap.iter_mut do (
+                OtherPlayer.update(o, delta_time);
+            );
+            for scale in &mut self^.dragon_scales |> ArrayList.iter_mut do (
+                if Vec3.length(Vec3.sub(self^.player.position, scale^.position)) < self^.player.scale + 1 then (
+                    scale^.collected = true;
+                );
+            );
             self^.next_send -= delta_time;
             if self^.next_send < 0 then (
                 self^.next_send = 1 / 10;
