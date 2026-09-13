@@ -5,11 +5,14 @@ const json = import "./json.ks";
 
 module:
 
+const MUSIC_VOLUME = 0.5;
+
 const Assets = (
     module:
 
     const t = newtype {
-        .music :: geng.audio.Buffer,
+        .music :: geng.audio.Effect,
+        .music_high :: geng.audio.Effect,
         .sfx :: Sfx,
         .font :: font.Font,
         .shaders :: Shaders,
@@ -91,11 +94,19 @@ const Assets = (
 
     const load = () -> t => (
         let music = geng.audio.load("assets/music.wav");
-        geng.audio.play_with(
+        let music = geng.audio.play_with(
             music,
             {
                 .@"loop" = true,
-                .volume = 0.25,
+                .volume = MUSIC_VOLUME,
+            },
+        );
+        let music_high = geng.audio.load("assets/music_high.wav");
+        let music_high = geng.audio.play_with(
+            music_high,
+            {
+                .@"loop" = true,
+                .volume = 0,
             },
         );
         let sfx = {
@@ -165,6 +176,7 @@ const Assets = (
 
         {
             .music,
+            .music_high,
             .sfx,
             .font,
             .shaders,

@@ -454,6 +454,16 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => with_return (
+            geng.audio.Effect.set_volume(
+                self^.assets.music,
+                clamp((64 - self^.player.position.2) / 10 * 0.5 + 0.5, .min = 0, .max = 1)
+                    * MUSIC_VOLUME,
+            );
+            geng.audio.Effect.set_volume(
+                self^.assets.music_high,
+                clamp((self^.player.position.2 - 84) / 10 * 0.5 + 0.5, .min = 0, .max = 1)
+                    * MUSIC_VOLUME,
+            );
             for &mut { .key = _, .value = ref mut o } in &mut self^.other_players |> OrdMap.iter_mut do (
                 OtherPlayer.update(o, delta_time);
             );
