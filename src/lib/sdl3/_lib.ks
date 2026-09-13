@@ -253,6 +253,10 @@ const MIX = (
         );
     );
 
+    const GetTrackGain = (track :: Track) -> Float32 => (
+        @native "MIX_GetTrackGain(\(track))"
+    );
+
     const SetTrackLoops = (track :: Track, loops :: Int32) => (
         if @native "!MIX_SetTrackLoops(\(track), \(loops))" then (
             throw_error("MIX_SetTrackLoops");

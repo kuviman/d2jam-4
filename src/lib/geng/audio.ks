@@ -46,6 +46,10 @@ impl Effect as module = (
     const set_volume = (effect :: Effect, volume :: Float32) => (
         SDL.MIX.SetTrackGain(effect.track, volume);
     );
+
+    const get_volume = (effect :: Effect) -> Float32 => (
+        SDL.MIX.GetTrackGain(effect.track)
+    );
 );
 
 const play_with = (buffer :: Buffer, options :: PlayOptions) -> Effect => (

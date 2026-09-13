@@ -464,14 +464,35 @@ const handle_mmo = (self :: &mut Game) => (
             );
         ),
         .update = (self, delta_time) => with_return (
+            const MUSIC_FADE_TIME = 5;
             geng.audio.Effect.set_volume(
                 self^.assets.music,
-                clamp((64 - self^.player.position.2) / 10 * 0.5 + 0.5, .min = 0, .max = 1)
+                (
+                    let target_volume = if self^.player.position.2 < 67 then 1 else 0;
+                    let current_volume = geng.audio.Effect.get_volume(self^.assets.music)
+                        / MUSIC_VOLUME;
+                    let max_delta = min(1, delta_time / MUSIC_FADE_TIME);
+                    current_volume + clamp(
+                        target_volume - current_volume,
+                        .min = -max_delta,
+                        .max = max_delta,
+                    )
+                )
                     * MUSIC_VOLUME,
             );
             geng.audio.Effect.set_volume(
                 self^.assets.music_high,
-                clamp((self^.player.position.2 - 84) / 10 * 0.5 + 0.5, .min = 0, .max = 1)
+                (
+                    let target_volume = if self^.player.position.2 > 74 then 1 else 0;
+                    let current_volume = geng.audio.Effect.get_volume(self^.assets.music_high)
+                        / MUSIC_VOLUME;
+                    let max_delta = min(1, delta_time / MUSIC_FADE_TIME);
+                    current_volume + clamp(
+                        target_volume - current_volume,
+                        .min = -max_delta,
+                        .max = max_delta,
+                    )
+                )
                     * MUSIC_VOLUME,
             );
             for &mut { .key = _, .value = ref mut o } in &mut self^.other_players |> OrdMap.iter_mut do (
@@ -495,6 +516,7 @@ const handle_mmo = (self :: &mut Game) => (
             geng.audio.Effect.set_volume(self^.jetpack_sfx, if self^.jetpack_enabled then 0.5 else 0);
             if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < self^.player.scale then (
                 if self^.timer is :Working t then (
+                    geng.audio.play(self^.assets.sfx.win);
                     badcop.beat_game(Float32_to_Int32(t));
                     self^.timer = :Win t;
                 );
