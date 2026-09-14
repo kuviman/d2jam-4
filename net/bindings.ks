@@ -25,6 +25,10 @@ const beat_game = (score :: Int32) => (
     @native "badcop_beat_game(\(score))";
 );
 
+const is_connected = () -> Bool => with_return (
+    @native "badcop_is_connected()"
+);
+
 const send_update = (u :: PlayerData) => (
     @native ''
         badcop_send_update((ClientMsgUpdate) {

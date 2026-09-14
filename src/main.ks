@@ -110,6 +110,7 @@ const Game = newtype {
     .next_send :: Float32,
     .dead :: Bool,
     .dead_timer :: Float32,
+    .connected :: Bool,
 };
 
 const DragonScale = newtype {
@@ -232,6 +233,13 @@ const send_update = (self :: &mut Game) => (
 );
 
 const handle_mmo = (self :: &mut Game) => (
+    let new_connection_state = badcop.is_connected();
+    if new_connection_state != self^.connected then (
+        self^.connected = new_connection_state;
+        if new_connection_state then (
+                self^.other_players = OrdMap.new();
+        );
+    );
     while badcop.poll_message() is :Some msg do (
         match msg with (
             | :Connected id => (
@@ -340,6 +348,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
                 .timer = :WaitForMove,
                 .next_physics = 0,
+                .connected = false,
             }
         ),
         .draw = self => with_return (
@@ -482,6 +491,17 @@ const handle_mmo = (self :: &mut Game) => (
                         .color,
                         .align = 0.5,
                     );
+                );
+            );
+            if not self^.connected then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    "disconnected",
+                    .matrix = Mat4.translate({ 0, 7, 0})
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.scale_uniform(2)),
+                    .color = {1, 0, 0, 1},
+                    .align = 0.5,
                 );
             );
             if time is :Some t then (
