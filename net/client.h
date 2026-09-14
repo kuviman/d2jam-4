@@ -13,9 +13,22 @@ int show_error(const char *error_text) {
   return -1;
 }
 
+#define RECV_BUFSIZE 1024
+
+typedef struct UserData {
+  int looping;
+  size_t start;
+  size_t end;
+  uint8_t buf[RECV_BUFSIZE];
+} UserData;
+
 char saved_conn_str[256] = {};
 int connected = 0;
 time_t disconnected_at = 0;
+struct TcsPoll *tcs_poll = NULL;
+TcsSocket client_socket = TCS_SOCKET_INVALID;
+UserData user = {};
+struct TcsPollEvent ev[1] = {};
 
 bool badcop_is_connected() { return connected; }
 
@@ -28,30 +41,27 @@ void _set_connected(int conn) {
     // set a timer so we can reconnect
   }
 }
-#define RECV_BUFSIZE 1024
 
-typedef struct UserData {
-  size_t start;
-  size_t end;
-  uint8_t buf[RECV_BUFSIZE];
-} UserData;
-
-void *has_full_message(UserData *user, size_t n, int *looping) {
-  if (user->end < user->start + n + 4) {
-    if (looping != NULL) {
-      *looping = 0;
+void *has_full_message(size_t n) {
+  if (user.end < user.start + n + 4) {
+    // reset buffer
+    if (user.start == user.end) {
+      user.start = 0;
+      user.end = 0;
     }
+    // shift remaining garbage to the front of the buffer
+    else if (user.start && user.start < user.end) {
+      memmove(user.buf, user.buf + user.start, user.end - user.start);
+      user.end = user.end - user.start;
+      user.start = 0;
+    }
+    user.looping = 0;
     return NULL;
   }
-  void *ret = user->buf + user->start;
-  user->start += n + 4;
+  void *ret = user.buf + user.start;
+  user.start += n + 4;
   return ret;
 }
-
-struct TcsPoll *tcs_poll = NULL;
-TcsSocket client_socket = TCS_SOCKET_INVALID;
-UserData user = {};
-struct TcsPollEvent ev[1] = {};
 
 TcsResult badcop_send_update(ClientMsgUpdate update) {
   struct __attribute__((packed)) {
@@ -80,7 +90,6 @@ TcsResult badcop_emote(int index) {
   TcsResult res = tcs_send(client_socket, (const uint8_t *)&msg, sizeof(msg),
                            TCS_MSG_SENDALL, NULL);
   if (res != TCS_SUCCESS) {
-    printf("Oh get rekt\n");
     _set_connected(0);
   }
   return res;
@@ -135,6 +144,9 @@ void _recv_next() {
     switch (res) {
     case TCS_SUCCESS:
       user.end += received_size;
+      if (received_size) {
+        user.looping = 1;
+      }
       break;
     default:
       _set_connected(0);
@@ -163,44 +175,49 @@ void *badcop_poll_msg() {
     }
     return NULL;
   }
-  if (user.start == user.end) {
+  if (!user.looping) {
     _recv_next();
+    if (!user.looping) {
+      return NULL;
+    }
   }
-  if (user.start + 4 <= user.end) {
+  if (user.looping && user.start + 4 <= user.end) {
     void *msg;
     switch (user.buf[user.start]) {
     case ServerEmote:
-      if (msg = has_full_message(&user, sizeof(ServerMsgEmote), NULL))
+      if (msg = has_full_message(sizeof(ServerMsgEmote)))
         return msg;
       break;
     case ServerUpdatePlayer:
-      if (msg = has_full_message(&user, sizeof(ServerMsgUpdatePlayer), NULL))
+      if (msg = has_full_message(sizeof(ServerMsgUpdatePlayer)))
         return msg;
       break;
     case ServerConnected:
-      if (msg = has_full_message(&user, sizeof(ServerMsgConnected), NULL))
+      if (msg = has_full_message(sizeof(ServerMsgConnected)))
         return msg;
       break;
     case ServerPlayerMeta:
-      if (msg = has_full_message(&user, sizeof(ServerMsgPlayerMeta), NULL))
+      if (msg = has_full_message(sizeof(ServerMsgPlayerMeta)))
         return msg;
       break;
     case ServerDisconnected:
-      if (msg = has_full_message(&user, sizeof(ServerMsgDisconnected), NULL))
+      if (msg = has_full_message(sizeof(ServerMsgDisconnected)))
         return msg;
       break;
     }
-  }
-  // reset buffer
-  if (user.start == user.end) {
-    user.start = 0;
-    user.end = 0;
-  }
-  // shift remaining garbage to the front of the buffer
-  else if (user.start && user.start < user.end) {
-    memmove(user.buf, user.buf + user.start, user.end - user.start);
-    user.end = user.end - user.start;
-    user.start = 0;
+  } else if (user.looping) {
+    // reset buffer
+    if (user.start == user.end) {
+      user.start = 0;
+      user.end = 0;
+    }
+    // shift remaining garbage to the front of the buffer
+    else if (user.start && user.start < user.end) {
+      memmove(user.buf, user.buf + user.start, user.end - user.start);
+      user.end = user.end - user.start;
+      user.start = 0;
+    }
+    user.looping = 0;
   }
   return NULL;
 }
