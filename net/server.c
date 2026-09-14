@@ -196,6 +196,7 @@ int main(int argc, char *argv[])
                     ClientMsgEmote* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgEmote), &looping)) {
                         printf("got emote\n");
+                        printf("Client %d [%d, %d]\n", user->id, user->start, user->end);
                       struct __attribute__((packed)) {
                         ServerMsgTag tag;
                         ServerMsgEmote data;
