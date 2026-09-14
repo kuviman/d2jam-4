@@ -185,10 +185,14 @@ const MeshProperties = newtype {
     .bounciness :: Float32,
     .friction :: Float32,
     .animated :: Bool,
+    .particles :: Int32,
+    .particle_t :: Float32,
+    .particle_spread :: Float32,
 };
 
 const CollisionResult = newtype {
     .velocity_along_normal :: Float32,
+    .normal :: Vec3,
 };
 
 const collide_and_react = (
@@ -240,7 +244,7 @@ const collide_and_react = (
             Vec3.cross(angular_impulse, collision.normal),
         );
         angular_velocity^ = Vec3.add(angular_velocity^, angular_impulse);
-        :Some { .velocity_along_normal }
+        :Some { .velocity_along_normal, .normal = collision.normal }
     ) else (
         :None
     )

@@ -287,6 +287,32 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => with_return (
             );
             let volume = min(abs(collision.velocity_along_normal) / 50, 1);
             if volume > 0.1 then (
+                let collision_point = Vec3.sub(
+                    self^.player.position,
+                    Vec3.mul(collision.normal, self^.player.scale),
+                );
+                for _ in 0..level_model^.properties.particles do (
+                    const rng = () => std.random.gen_range(.min = -0.5, .max = 0.5);
+                    let p = Vec3.add(
+                        collision_point,
+                        Vec3.mul({ rng(), rng(), rng() }, level_model^.properties.particle_spread),
+                    );
+                    let particle = {
+                        .position = Vec3.sub(
+                            p,
+                            Vec3.mul(
+                                collision.normal,
+                                Vec3.dot(
+                                    collision.normal,
+                                    Vec3.sub(p, collision_point),
+                                ),
+                            ),
+                        ),
+                        .t = level_model^.properties.particle_t,
+                        .texture = level_model^.particle,
+                    };
+                    &mut self^.particles |> ArrayList.push_back(particle);
+                );
                 geng.audio.play_with(
                     level_model^.sfx,
                     { .volume, .@"loop" = false },

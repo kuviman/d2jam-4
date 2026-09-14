@@ -53,6 +53,7 @@ const Assets = (
         .model :: Model.t,
         .sfx :: geng.audio.Buffer,
         .properties :: collisions.MeshProperties,
+        .particle :: ugli.Texture,
     };
 
     impl LevelModel as module = (
@@ -86,6 +87,7 @@ const Assets = (
                         |> Result.unwrap;
                     include_ast json.parse_value(`(value), collisions.MeshProperties)
                 ),
+                .particle = geng.load_texture(path + "/particle.png", :Nearest),
             }
         );
     );

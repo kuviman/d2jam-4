@@ -1,4 +1,7 @@
 {
+    "particles": 5,
+    "particle_t": 0,
+    "particle_spread": 1,
     "bounciness": 1,
     "friction": 0.2,
     "animated": false
