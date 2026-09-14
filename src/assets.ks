@@ -44,6 +44,7 @@ const Assets = (
         .ground :: ugli.Texture,
         .water :: ugli.Texture,
         .fire :: ugli.Texture,
+        .water_particle :: ugli.Texture,
     };
 
     const LevelModel = newtype {
@@ -159,6 +160,7 @@ const Assets = (
                 list
             ),
             .fire = geng.load_texture("assets/sprites/particle/fire.png", :Nearest),
+            .water_particle = geng.load_texture("assets/sprites/particle/water.png", :Nearest),
         };
 
         let models = {

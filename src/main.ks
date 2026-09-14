@@ -225,6 +225,18 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => with_return (
     if old_z >= 0 and new_z < 0 or old_z < 0 and new_z >= 0 then (
         let volume = min(abs(self^.player.velocity.2) / player_speed * 2 - 1, 1);
         if volume > 0.1 then (
+            for (_ :: Int32) in 0..5 do (
+                let deg = std.random.gen_range(.min = 0, .max = 360);
+                let particle = {
+                    .position = Vec3.add(
+                        self^.player.position,
+                        { ...Vec2.rotate({ self^.player.scale, 0 }, Angle.from_degrees(deg)), 0 }
+                    ),
+                    .texture = self^.assets.textures.water_particle,
+                    .t = 0,
+                };
+                &mut self^.particles |> ArrayList.push_back(particle);
+            );
             geng.audio.play_with(
                 self^.assets.sfx.splash,
                 { .volume, .@"loop" = false },
