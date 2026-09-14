@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
                 continue;
               }
               int looping = 1;
-              while(looping && user->start <= user->end + 4) {
+              while(looping && (user->start <= (user->end + 4))) {
                 switch(user->buf[user->start]) {
                   case ClientEmote: {
                     ClientMsgEmote* msg;
