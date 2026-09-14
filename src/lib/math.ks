@@ -20,6 +20,11 @@ const sqrt = (x :: Float32) -> Float32 => (
     @native "sqrtf(\(x))"
 );
 
+const pow = (x :: Float32, p :: Float32) -> Float32 => (
+    @native "#include <math.h>";
+    @native "powf(\(x), \(p))"
+);
+
 const atan2 = (y :: Float32, x :: Float32) -> Float32 => (
     @native "#include <math.h>";
     @native "atan2f(\(y), \(x))"

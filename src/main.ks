@@ -114,6 +114,14 @@ const Game = newtype {
     .dead_timer :: Float32,
     .connected :: Bool,
     .show_timer :: Bool,
+    .particle_buffer :: ugli.VertexBuffer.t[obj.Vertex],
+    .particles :: ArrayList.t[Particle],
+};
+
+const Particle = newtype {
+    .position :: Vec3,
+    .texture :: ugli.Texture,
+    .t :: Float32,
 };
 
 const DragonScale = newtype {
@@ -150,6 +158,25 @@ const reset_player = (.skin) -> Entity => {
     .can_jump = false,
     .scale = 1,
 };
+
+const draw_particle = (
+    self :: &mut Game,
+    position :: Vec3,
+    scale :: Float32,
+    texture :: ugli.Texture,
+) => (
+    let model = {
+        .buffer = self^.particle_buffer,
+        .texture,
+    };
+    Model.draw(
+        model,
+        false,
+        Mat4.translate(position)
+            |> Mat4.mul_mat(Mat4.scale_uniform(scale))
+            |> Mat4.mul_mat(Mat4.rotate_z(self^.camera.rotation))
+    );
+);
 
 const restart = (self :: &mut Game) => (
     self^.dead = false;
@@ -354,6 +381,43 @@ const handle_mmo = (self :: &mut Game) => (
                 .next_physics = 0,
                 .connected = false,
                 .show_timer = true,
+                .particles = ArrayList.new(),
+                .particle_buffer = (
+                    let mut data :: ArrayList.t[obj.Vertex] = ArrayList.new();
+                    ArrayList.push_back(
+                        &mut data,
+                        {
+                            .a_pos = { -1, 0, -1 },
+                            .a_normal = { 0, 0, 1 },
+                            .a_uv = { 0, 0 },
+                        },
+                    );
+                    ArrayList.push_back(
+                        &mut data,
+                        {
+                            .a_pos = { +1, 0, -1 },
+                            .a_normal = { 0, 0, 1 },
+                            .a_uv = { 1, 0 },
+                        },
+                    );
+                    ArrayList.push_back(
+                        &mut data,
+                        {
+                            .a_pos = { +1, 0, +1 },
+                            .a_normal = { 0, 0, 1 },
+                            .a_uv = { 1, 1 },
+                        },
+                    );
+                    ArrayList.push_back(
+                        &mut data,
+                        {
+                            .a_pos = { -1, 0, +1 },
+                            .a_normal = { 0, 0, 1 },
+                            .a_uv = { 0, 1 },
+                        },
+                    );
+                    ugli.VertexBuffer.init(&data)
+                ),
             }
         ),
         .draw = self => with_return (
@@ -398,6 +462,9 @@ const handle_mmo = (self :: &mut Game) => (
                 OtherPlayer.draw(other_player);
             );
             Model.draw(self^.water, true, Mat4.IDENTITY);
+            for p in &self^.particles |> ArrayList.iter do (
+                draw_particle(self, p^.position, 1 - math.pow(p^.t, 2), p^.texture);
+            );
 
             let height = 12;
             let distance = 8;
