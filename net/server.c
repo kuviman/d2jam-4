@@ -195,8 +195,6 @@ int main(int argc, char *argv[])
                   case ClientEmote: {
                     ClientMsgEmote* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgEmote), &looping)) {
-                        printf("got emote\n");
-                        printf("Client %llu [%lu, %lu]\n", user->id, user->start, user->end);
                       struct __attribute__((packed)) {
                         ServerMsgTag tag;
                         ServerMsgEmote data;
@@ -252,7 +250,6 @@ int main(int argc, char *argv[])
                       pdata[user->pidx].data = *msg;
 
                       LOG_DEBUG("Sending world update to %llu\n", user->id);
-                      printf("Client %llu [%lu, %lu]\n", user->id, user->start, user->end);
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
@@ -289,6 +286,7 @@ int main(int argc, char *argv[])
               }
               // shift remaining garbage to the front of the buffer
               else if (user->start && user->start < user->end) {
+                printf("FRAGMENTED MESSAGE %llu: [%lu, %lu]\n", user->id, user->start, user->end);
                 memmove(user->buf,  user->buf + user->start, user->end - user->start);
                 user->end = user->end - user->start;
                 user->start = 0;
