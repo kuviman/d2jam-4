@@ -43,6 +43,7 @@ const Assets = (
         .muted :: ugli.Texture,
         .ground :: ugli.Texture,
         .water :: ugli.Texture,
+        .fire :: ugli.Texture,
     };
 
     const LevelModel = newtype {
@@ -157,6 +158,7 @@ const Assets = (
                 add("assets/sprites/emote/kast.png");
                 list
             ),
+            .fire = geng.load_texture("assets/sprites/particle/fire.png", :Nearest),
         };
 
         let models = {

@@ -252,6 +252,18 @@ const update_step = (self :: &mut Game, delta_time :: Float32) => with_return (
         ) is :Some collision then (
             if type_index == 1 then (
                 self^.dead = true;
+                for (_ :: Int32) in 0..10 do (
+                    const rng = () => std.random.gen_range(.min = -0.5, .max = 0.5);
+                    let particle = {
+                        .position = Vec3.add(
+                            self^.player.position,
+                            { rng(), rng(), rng() },
+                        ),
+                        .t = 0,
+                        .texture = self^.assets.textures.fire,
+                    };
+                    &mut self^.particles |> ArrayList.push_back(particle);
+                );
             );
             let volume = min(abs(collision.velocity_along_normal) / 50, 1);
             if volume > 0.1 then (
