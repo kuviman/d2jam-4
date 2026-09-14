@@ -122,6 +122,8 @@ TcsResult badcop_beat_game(unsigned long long duration) {
  * Read from the actual TCP socket; don't call this directly (see 'poll_msg')
  */
 void _recv_next() {
+  if (!connected)
+    return;
   size_t events;
   TcsResult poll_res = tcs_poll_wait(tcs_poll, ev, 1, &events, 0);
   if (events && ev[0].can_read) {
@@ -137,6 +139,10 @@ void _recv_next() {
       _set_connected(0);
       break;
     }
+  }
+  if (events && ev[0].error) {
+    printf("Socket read error: %d\n", ev[0].error);
+    _set_connected(0);
   }
 }
 
@@ -204,6 +210,9 @@ void *badcop_poll_msg() {
 int badcop_init(char *conn_str) {
   if (!*saved_conn_str) {
     strncpy(saved_conn_str, conn_str, 255);
+    tcs_poll_create(&tcs_poll);
+  } else {
+    tcs_poll_remove(tcs_poll, client_socket);
   }
   _set_connected(0);
   client_socket = TCS_SOCKET_INVALID;
@@ -220,7 +229,6 @@ int badcop_init(char *conn_str) {
   tcs_opt_ip_no_delay_set(client_socket, true);
 #endif
 
-  tcs_poll_create(&tcs_poll);
   tcs_poll_add(tcs_poll, client_socket, NULL, TCS_POLL_READ);
 }
 

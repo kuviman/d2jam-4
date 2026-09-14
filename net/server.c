@@ -37,7 +37,7 @@ static int show_error(const char* error_text)
     return -1;
 }
 
-void broadcast(struct TcsPoll* poll, const uint8_t *msg, size_t msg_size, unsigned long long ignore) {
+void broadcast(const uint8_t *msg, size_t msg_size, unsigned long long ignore) {
   for (size_t i = 0; i < MAX_CONNECTIONS; ++i) {
     if (pdata[i].is_valid && pdata[i].meta.id != ignore) {
       tcs_send(pdata[i].socket, msg, msg_size, TCS_MSG_SENDALL, NULL);
@@ -59,7 +59,7 @@ void disconnect(struct TcsPoll* poll, TcsSocket socket, UserData* user_data) {
       }
     };
     pdata[user_data->pidx].is_valid = false;
-    broadcast(poll, (const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
+    broadcast((const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
     free(user_data);
 }
 
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
     if (tcs_listen(listen_socket, TCS_BACKLOG_MAX) != TCS_SUCCESS)
         return show_error("Could not listen on socket");
-    
+
     tcs_opt_nonblocking_set(listen_socket, true);
     tcs_opt_ip_no_delay_set(listen_socket, true);
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
       if (tcs_accept(listen_socket, &child_socket, NULL) == TCS_SUCCESS) {
         tcs_opt_ip_no_delay_set(child_socket, true);
         LOG_DEBUG("Accepted client: %lld\n", client_id);
-        
+
         // broadcast to everybody else
         struct __attribute__((packed)) {
           ServerMsgTag tag;
@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
           }
         };
 
-        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
-        
+        broadcast((const uint8_t*)&msg, sizeof(msg), UINT64_MAX);
+
         UserData *data = (UserData*)calloc(1, sizeof(UserData));
         data->id = client_id;
-         
+
         // find a slot for this player in 'pdata'
         size_t p;
         for (p = 0; p < MAX_CONNECTIONS; ++p) {
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
                           .index = msg->index,
                         },
                       };
-                      broadcast(poll, (const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
+                      broadcast((const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
                     }
                     break;
                   }
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
                           .tag = ServerPlayerMeta,
                           .data = pdata[user->pidx].meta,
                         };
-                        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
+                        broadcast((const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
                       }
                     }
                     break;
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
                           .tag = ServerPlayerMeta,
                           .data = pdata[user->pidx].meta,
                         };
-                        broadcast(poll, (const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
+                        broadcast((const uint8_t*)&msg, sizeof(msg), pdata[user->pidx].meta.id);
                     }
                     break;
                   }
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
                     if (msg = has_full_message(user, sizeof(ClientMsgUpdate), &looping)) {
                       // do something with the message
                       pdata[user->pidx].data = *msg;
-                      
+
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
                         tcs_send(ev[i].socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
                         LOG_DEBUG("Sending world update to %llu\n", user->id);
                       }
-                      LOG_DEBUG("got update\n\tx: %f\n\ty: %f\n\tz: %f\n", 
+                      LOG_DEBUG("got update\n\tx: %f\n\ty: %f\n\tz: %f\n",
                         msg->px, msg->py, msg->pz);
                     }
                     break;
@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
                     break;
                 }
               }
-              // reset buffer 
+              // reset buffer
               if (user->start == user->end) {
                 user->start = 0;
                 user->end = 0;
