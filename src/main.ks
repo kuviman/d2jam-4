@@ -363,8 +363,10 @@ const handle_mmo = (self :: &mut Game) => (
                 Model.draw(model, false, Mat4.IDENTITY);
             );
             # @native "glDisable(GL_CULL_FACE)";
+            let mut collected_scales :: Int32 = 0;
             for scale in &self^.dragon_scales |> ArrayList.iter do (
                 if scale^.collected then (
+                    collected_scales += 1;
                     continue;
                 );
                 let matrix = Mat4.translate(scale^.position)
@@ -465,6 +467,13 @@ const handle_mmo = (self :: &mut Game) => (
                     .color,
                     .align = 0.5,
                 );
+                font.Font.draw(
+                    &self^.assets.font,
+                    to_string(collected_scales) + " dragon scales collected",
+                    .matrix = Mat4.translate({ 0, 3, 0}),
+                    .color,
+                    .align = 0.5,
+                );
                 if self^.cheated then (
                     font.Font.draw(
                         &self^.assets.font,
@@ -537,9 +546,13 @@ const handle_mmo = (self :: &mut Game) => (
             for &mut { .key = _, .value = ref mut o } in &mut self^.other_players |> OrdMap.iter_mut do (
                 OtherPlayer.update(o, delta_time);
             );
-            for scale in &mut self^.dragon_scales |> ArrayList.iter_mut do (
-                if Vec3.length(Vec3.sub(self^.player.position, scale^.position)) < self^.player.scale + 1 then (
-                    scale^.collected = true;
+            if self^.timer is :Win _ then () else (
+                for scale in &mut self^.dragon_scales |> ArrayList.iter_mut do (
+                    if scale^.collected then continue;
+                    if Vec3.length(Vec3.sub(self^.player.position, scale^.position)) < self^.player.scale + 1 then (
+                        geng.audio.play(self^.assets.sfx.collect);
+                        scale^.collected = true;
+                    );
                 );
             );
             self^.next_send -= delta_time;

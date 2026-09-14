@@ -33,6 +33,7 @@ const Assets = (
         .ground :: geng.audio.Buffer,
         .splash :: geng.audio.Buffer,
         .win :: geng.audio.Buffer,
+        .collect :: geng.audio.Buffer,
     };
 
     const Textures = newtype {
@@ -119,6 +120,7 @@ const Assets = (
             .ground = geng.audio.load("assets/sfx/ground.wav"),
             .splash = geng.audio.load("assets/sfx/splash.wav"),
             .win = geng.audio.load("assets/sfx/trumpet.mp3"),
+            .collect = geng.audio.load("assets/sfx/collect.wav"),
         };
         let font = font.Font.load("assets/font");
 

@@ -5,8 +5,7 @@
 - disconnected warning
 - emotes
 - leaderboard
-- skins
-- missing sfxs: trumpet win, collecting scales, rolling
+- missing sfxs: rolling
 - particles: fire, water, lava(death), when you drop
 - performance
 - crash
