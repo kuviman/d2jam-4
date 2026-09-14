@@ -19,6 +19,8 @@ const init = () -> ContextT => (
 );
 
 const Key = newtype (
+    | :PageUp
+    | :PageDown
     | :A
     | :B
     | :C
@@ -113,6 +115,8 @@ impl Key as module = (
         if @native "\(code) == SDL_SCANCODE_7" then return :Some :Digit7;
         if @native "\(code) == SDL_SCANCODE_8" then return :Some :Digit8;
         if @native "\(code) == SDL_SCANCODE_9" then return :Some :Digit9;
+        if @native "\(code) == SDL_SCANCODE_PAGEUP" then return :Some :PageUp;
+        if @native "\(code) == SDL_SCANCODE_PAGEDOWN" then return :Some :PageDown;
         :None
     );
 
@@ -161,6 +165,8 @@ impl Key as module = (
         | :LeftShift => @native "SDL_SCANCODE_LSHIFT"
         | :Enter => @native "SDL_SCANCODE_RETURN"
         | :Backspace => @native "SDL_SCANCODE_BACKSPACE"
+        | :PageUp => @native "SDL_SCANCODE_PAGEUP"
+        | :PageDown => @native "SDL_SCANCODE_PAGEDOWN"
     );
 
     const is_pressed = (key :: Key) -> Bool => (

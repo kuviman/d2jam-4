@@ -131,6 +131,7 @@ const Game = newtype {
     .particle_buffer :: ugli.VertexBuffer.t[obj.Vertex],
     .particles :: ArrayList.t[Particle],
     .next_fire_particle :: Float32,
+    .sens :: Float32,
 };
 
 const FIREPLACES :: ArrayList.t[Vec3] = (
@@ -455,6 +456,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .flate_sfx = :None,
                 .jetpack_sfx = geng.audio.play_with(assets.sfx.jetpack, { .volume = 0, .@"loop" = true }),
                 .timer = :WaitForMove,
+                .sens = 1,
                 .next_physics = 0,
                 .connected = false,
                 .show_timer = true,
@@ -690,6 +692,16 @@ const handle_mmo = (self :: &mut Game) => (
                 );
                 font.Font.draw(
                     &self^.assets.font,
+                    "PageUp/PageDown to change sens",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 1.5}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.scale_uniform(0.5)),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
                     "R to RESTART",
                     .matrix = Mat4.rotate_z(Angle.from_degrees(10))
                         |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
@@ -708,7 +720,7 @@ const handle_mmo = (self :: &mut Game) => (
                 );
                 font.Font.draw(
                     &self^.assets.font,
-                    "Enter to CHANGE SKIN",
+                    "Left/Right to CHANGE SKIN",
                     .matrix = Mat4.rotate_z(Angle.from_degrees(90))
                         |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
@@ -1128,13 +1140,23 @@ const handle_mmo = (self :: &mut Game) => (
                     emote(self, self^.player.position, 4);
                     badcop.emote(4);
                 )
+                | :KeyPress :PageUp => (
+                    self^.sens = self^.sens * 1.1;
+                )
+                | :KeyPress :PageDown => (
+                    self^.sens = self^.sens / 1.1;
+                )
                 | :KeyPress :R => (
                     restart(self);
                 )
                 | :KeyPress :F => (
                     self^.jetpack_enabled = not self^.jetpack_enabled;
                 )
-                | :KeyPress :Enter => (
+                | :KeyPress :ArrowLeft => (
+                    let len = ArrayList.length(&self^.assets.models.skins);
+                    self^.player.skin = (self^.player.skin + len - 1) % len;
+                )
+                | :KeyPress :ArrowRight => (
                     self^.player.skin = (self^.player.skin + 1) % ArrayList.length(&self^.assets.models.skins);
                 )
                 | :KeyPress :K => (
@@ -1148,6 +1170,7 @@ const handle_mmo = (self :: &mut Game) => (
                 )
                 | :MouseMove { .delta, ... } => (
                     let degree_per_pixel :: Float32 = 360 / 2000;
+                    let delta = Vec2.mul(delta, self^.sens);
                     self^.camera.rotation = Angle.sub(
                         self^.camera.rotation,
                         Angle.from_degrees(delta.0 * degree_per_pixel),
