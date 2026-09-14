@@ -396,59 +396,160 @@ const handle_mmo = (self :: &mut Game) => (
 
             let height = 12;
             let distance = 8;
-            font.Font.draw(
-                &self^.assets.font,
-                "WASD to ROLL",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
+
+            let linksider_pos :: Vec3 = { 406.587189, -9.395210, 13 };
+            if Vec3.length(Vec3.sub(self^.player.position, linksider_pos)) < 20 then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    "wishlist LinkSider on steam",
+                    .matrix = Mat4.translate(linksider_pos)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-120)))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
             );
-            font.Font.draw(
-                &self^.assets.font,
-                "Mouse to LOOK",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
+
+            if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < 20 then (
+                let distance = 15;
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Scale to Space",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 10}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.scale_uniform(3)),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "made for Down2Jam 4",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 9}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "kuviman - programming, sfx",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "rickylee - level design, modeling",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "badcop - multiplayer",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-10)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "howlingaf - consulting",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-10)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "vesdev - music",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-170)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Martin_Lutter - trumpet sfx",
+                    .matrix = Mat4.translate(FINISH)
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-170)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
             );
-            font.Font.draw(
-                &self^.assets.font,
-                "R to RESTART",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(10))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
-            );
-            font.Font.draw(
-                &self^.assets.font,
-                "F to CHEAT",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(10))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
-            );
-            font.Font.draw(
-                &self^.assets.font,
-                "Enter to CHANGE SKIN",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(90))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
-            );
-            font.Font.draw(
-                &self^.assets.font,
-                "Space to SCALE",
-                .matrix = Mat4.rotate_z(Angle.from_degrees(-170))
-                    |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
-                    |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
-                .color = { 0, 0, 0, 1 },
-                .align = 0.5,
+
+            if Vec3.length(self^.player.position) < 40 then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    "WASD to ROLL",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Mouse to LOOK",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "R to RESTART",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(10))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height + 0.5}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "F to CHEAT",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(10))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height - 0.5}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Enter to CHANGE SKIN",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(90))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Space to SCALE",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(-170))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, height}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
             );
 
             with geng.CameraUniforms.Ctx = geng.CameraUniforms.init(
