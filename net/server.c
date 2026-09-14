@@ -250,6 +250,7 @@ int main(int argc, char *argv[])
                       // do something with the message
                       pdata[user->pidx].data = *msg;
 
+                      LOG_DEBUG("Sending world update to %llu\n", user->id);
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
@@ -265,7 +266,6 @@ int main(int argc, char *argv[])
                           }
                         };
                         tcs_send(ev[i].socket, (const uint8_t*)&msg, sizeof(msg), TCS_MSG_SENDALL, NULL);
-                        LOG_DEBUG("Sending world update to %llu\n", user->id);
                       }
                       LOG_DEBUG("got update\n\tx: %f\n\ty: %f\n\tz: %f\n",
                         msg->px, msg->py, msg->pz);
@@ -273,6 +273,8 @@ int main(int argc, char *argv[])
                     break;
                   }
                   default:
+                    printf("WEIRD STATE DETECTED; cya later %d\n", user->id);
+                    disconnect(poll, ev[i].socket, ev[i].user_data);
                     looping = 0;
                     break;
                 }
