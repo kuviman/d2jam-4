@@ -39,7 +39,7 @@ const init = () -> { .geng :: ContextT, .gl :: gl.ContextT } => (
     log("Initializing");
     SDL.Init(@native "SDL_INIT_VIDEO");
     let window = SDL.CreateWindow(
-        "Kast Game Example",
+        "Scale to Space",
         640,
         480,
         @native "SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL",
