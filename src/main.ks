@@ -331,7 +331,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .camera = {
                     .position = { 0, 0, 5 },
                     .distance = 5,
-                    .attack = Angle.from_degrees(30),
+                    .attack = Angle.from_degrees(0),
                     .rotation = Angle.from_degrees(0),
                     .fov = Angle.from_degrees(90),
                 },
@@ -498,6 +498,16 @@ const handle_mmo = (self :: &mut Game) => (
             );
 
             if Vec3.length(self^.player.position) < 40 then (
+                font.Font.draw(
+                    &self^.assets.font,
+                    "Scale to Space",
+                    .matrix = Mat4.rotate_z(Angle.from_degrees(-90))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance * 2, height + 6 }))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.scale_uniform(4)),
+                    .color = { 0, 0, 0, 1 },
+                    .align = 0.5,
+                );
                 font.Font.draw(
                     &self^.assets.font,
                     "WASD to ROLL",
