@@ -72,9 +72,10 @@ TcsResult badcop_emote(int index) {
     ClientMsgEmote data;
   } msg = {
       .tag = ClientEmote,
-      .data = {
-          .index = index,
-      },
+      .data =
+          {
+              .index = index,
+          },
   };
   TcsResult res = tcs_send(client_socket, (const uint8_t *)&msg, sizeof(msg),
                            TCS_MSG_SENDALL, NULL);
@@ -132,8 +133,6 @@ void _recv_next() {
     case TCS_SUCCESS:
       user.end += received_size;
       break;
-    case TCS_ERROR_WOULD_BLOCK:
-      break;
     default:
       _set_connected(0);
       break;
@@ -166,7 +165,7 @@ void *badcop_poll_msg() {
     case ServerEmote:
       if (msg = has_full_message(&user, sizeof(ServerMsgEmote), NULL))
         return msg;
-        break;
+      break;
     case ServerUpdatePlayer:
       if (msg = has_full_message(&user, sizeof(ServerMsgUpdatePlayer), NULL))
         return msg;
@@ -206,7 +205,7 @@ int badcop_init(char *conn_str) {
   if (!*saved_conn_str) {
     strncpy(saved_conn_str, conn_str, 255);
   }
-  disconnected_at = time(NULL);
+  _set_connected(0);
   client_socket = TCS_SOCKET_INVALID;
   if (tcs_lib_init() != TCS_SUCCESS)
     return show_error("Could not init tinycsocket");
