@@ -1141,10 +1141,10 @@ const handle_mmo = (self :: &mut Game) => (
                     badcop.emote(4);
                 )
                 | :KeyPress :PageUp => (
-                    self^.sens = self^.sens * 1.1;
+                    self^.sens = self^.sens * 1.2;
                 )
                 | :KeyPress :PageDown => (
-                    self^.sens = self^.sens / 1.1;
+                    self^.sens = self^.sens / 1.2;
                 )
                 | :KeyPress :R => (
                     restart(self);
