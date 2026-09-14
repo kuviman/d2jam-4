@@ -113,6 +113,7 @@ const Game = newtype {
     .dead :: Bool,
     .dead_timer :: Float32,
     .connected :: Bool,
+    .show_timer :: Bool,
 };
 
 const DragonScale = newtype {
@@ -351,6 +352,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .timer = :WaitForMove,
                 .next_physics = 0,
                 .connected = false,
+                .show_timer = true,
             }
         ),
         .draw = self => with_return (
@@ -413,13 +415,14 @@ const handle_mmo = (self :: &mut Game) => (
             );
 
             if Vec3.length(Vec3.sub(self^.player.position, FINISH)) < 20 then (
-                let distance = 15;
+                let distance = 25;
                 font.Font.draw(
                     &self^.assets.font,
                     "Scale to Space",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 10}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(45)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 15}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
                         |> Mat4.mul_mat(Mat4.scale_uniform(4)),
                     .color = { 0, 0, 0, 1 },
@@ -430,7 +433,8 @@ const handle_mmo = (self :: &mut Game) => (
                     "made for Down2Jam 4",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 9}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(45)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 14}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
@@ -440,7 +444,8 @@ const handle_mmo = (self :: &mut Game) => (
                     "kuviman - programming, sfx",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(45)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 12}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
@@ -450,7 +455,8 @@ const handle_mmo = (self :: &mut Game) => (
                     "rickylee - level design, modeling",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(45)))
+                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 11}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
@@ -460,8 +466,10 @@ const handle_mmo = (self :: &mut Game) => (
                     "badcop - multiplayer",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-10)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.translate({ -5, distance, 10}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(30))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
                 );
@@ -470,8 +478,10 @@ const handle_mmo = (self :: &mut Game) => (
                     "howlingaf - consulting",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-10)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.translate({ -5, distance, 9}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(30))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
                 );
@@ -480,8 +490,10 @@ const handle_mmo = (self :: &mut Game) => (
                     "vesdev - music",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-170)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 7}))
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.translate({ 5, distance, 10}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-30))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
                 );
@@ -490,8 +502,10 @@ const handle_mmo = (self :: &mut Game) => (
                     "Martin_Lutter - trumpet sfx",
                     .matrix = Mat4.translate(FINISH)
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-170)))
-                        |> Mat4.mul_mat(Mat4.translate({ 0, distance, 6}))
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90))),
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                        |> Mat4.mul_mat(Mat4.translate({ 5, distance, 9}))
+                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
+                        |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-30))),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
                 );
@@ -574,38 +588,6 @@ const handle_mmo = (self :: &mut Game) => (
                 },
                 .framebuffer_size = geng.get_window_size(),
             );
-            let time :: Option.t[Float32] = match self^.timer with (
-                | :Working t => :Some t
-                | :Win t => :Some t
-                | _ => :None
-            );
-            let color = if self^.cheated then { 1, 0, 0, 1 } else { 0, 0, 0, 1 };
-            if self^.timer is :Win _ then (
-                font.Font.draw(
-                    &self^.assets.font,
-                    "YOU HAVE SCALED THE MOUNTAIN",
-                    .matrix = Mat4.translate({ 0, 5, 0})
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(10))),
-                    .color,
-                    .align = 0.5,
-                );
-                font.Font.draw(
-                    &self^.assets.font,
-                    to_string(collected_scales) + " dragon scales collected",
-                    .matrix = Mat4.translate({ 0, 3, 0}),
-                    .color,
-                    .align = 0.5,
-                );
-                if self^.cheated then (
-                    font.Font.draw(
-                        &self^.assets.font,
-                        "with cheats",
-                        .matrix = Mat4.translate({ 0, 4, 0}),
-                        .color,
-                        .align = 0.5,
-                    );
-                );
-            );
             if not self^.connected then (
                 font.Font.draw(
                     &self^.assets.font,
@@ -615,23 +597,65 @@ const handle_mmo = (self :: &mut Game) => (
                     .align = 0.5,
                 );
             );
-            if time is :Some t then (
-                font.Font.draw(
-                    &self^.assets.font,
-                    (
-                        let seconds :: Int32 = @native "\(t)";
-                        let minutes = seconds / 60;
-                        let seconds = seconds % 60;
-                        to_string(minutes)
-                        + ":"
-                        + to_string(seconds / 10)
-                        + to_string(seconds % 10)
-                    ),
-                    .matrix = Mat4.translate({ 0, 7, 0})
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
-                        |> Mat4.mul_mat(Mat4.scale_uniform(2)),
-                    .color,
-                    .align = 0.5,
+            if self^.show_timer then (
+                let time :: Option.t[Float32] = match self^.timer with (
+                    | :Working t => :Some t
+                    | :Win t => :Some t
+                    | _ => :None
+                );
+                let color = if self^.cheated then { 1, 0, 0, 1 } else { 0, 0, 0, 1 };
+                if self^.timer is :Win _ then (
+                    font.Font.draw(
+                        &self^.assets.font,
+                        "YOU HAVE SCALED THE MOUNTAIN",
+                        .matrix = Mat4.translate({ 0, 5, 0})
+                            |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(10))),
+                        .color,
+                        .align = 0.5,
+                    );
+                    font.Font.draw(
+                        &self^.assets.font,
+                        to_string(collected_scales) + " dragon scales collected",
+                        .matrix = Mat4.translate({ 0, -1, 0}),
+                        .color,
+                        .align = 0.5,
+                    );
+                    if self^.cheated then (
+                        font.Font.draw(
+                            &self^.assets.font,
+                            "with cheats",
+                            .matrix = Mat4.translate({ 0, 4, 0}),
+                            .color,
+                            .align = 0.5,
+                        );
+                    );
+
+                    font.Font.draw(
+                        &self^.assets.font,
+                        "press H to hide",
+                        .matrix = Mat4.translate({ 0, 2, 0}),
+                        .color,
+                        .align = 0.5,
+                    );
+                );
+                if time is :Some t then (
+                    font.Font.draw(
+                        &self^.assets.font,
+                        (
+                            let seconds :: Int32 = @native "\(t)";
+                            let minutes = seconds / 60;
+                            let seconds = seconds % 60;
+                            to_string(minutes)
+                            + ":"
+                            + to_string(seconds / 10)
+                            + to_string(seconds % 10)
+                        ),
+                        .matrix = Mat4.translate({ 0, 7, 0})
+                            |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
+                            |> Mat4.mul_mat(Mat4.scale_uniform(2)),
+                        .color,
+                        .align = 0.5,
+                    );
                 );
             );
         ),
@@ -889,6 +913,9 @@ const handle_mmo = (self :: &mut Game) => (
                 )
                 | :KeyPress :K => (
                     print(to_string(self^.player.position));
+                )
+                | :KeyPress :H => (
+                    self^.show_timer = not self^.show_timer;
                 )
                 | :MousePress _ => (
                     SDL.SetWindowRelativeMouseMode((@current geng.Context).window, true);
