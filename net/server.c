@@ -251,6 +251,7 @@ int main(int argc, char *argv[])
                       pdata[user->pidx].data = *msg;
 
                       LOG_DEBUG("Sending world update to %llu\n", user->id);
+                      printf("Client %d [%d, %d]\n", user->id, user->start, user->end);
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
