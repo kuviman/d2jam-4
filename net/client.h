@@ -80,6 +80,7 @@ TcsResult badcop_emote(int index) {
   TcsResult res = tcs_send(client_socket, (const uint8_t *)&msg, sizeof(msg),
                            TCS_MSG_SENDALL, NULL);
   if (res != TCS_SUCCESS) {
+    printf("Oh get rekt\n");
     _set_connected(0);
   }
   return res;

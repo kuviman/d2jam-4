@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
       }
 
       size_t events;
-      TcsResult poll_res = tcs_poll_wait(poll, ev, MAX_CONNECTIONS, &events, 10);
+      TcsResult poll_res = tcs_poll_wait(poll, ev, MAX_CONNECTIONS, &events, 0);
 
       for (size_t i = 0; i < events; ++i)
       {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
                           .index = msg->index,
                         },
                       };
-                      broadcast((const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
+                      // broadcast((const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
                     }
                     break;
                   }
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
                     break;
                   }
                   default:
-                    printf("WEIRD STATE DETECTED; cya later %d\n", user->id);
+                    printf("WEIRD STATE DETECTED %d [%d, %d]\n", user->id, user->start, user->end);
                     disconnect(poll, ev[i].socket, ev[i].user_data);
                     looping = 0;
                     break;
