@@ -130,7 +130,15 @@ const Game = newtype {
     .show_timer :: Bool,
     .particle_buffer :: ugli.VertexBuffer.t[obj.Vertex],
     .particles :: ArrayList.t[Particle],
+    .next_fire_particle :: Float32,
 };
+
+const FIREPLACES :: ArrayList.t[Vec3] = (
+    let mut list = ArrayList.new[Vec3]();
+    &mut list |> ArrayList.push_back({ -3.354541, -0.000820, 10.327483 });
+    &mut list |> ArrayList.push_back({ 400.877594, 0.000273, 6.669017 });
+    list
+);
 
 const Particle = newtype {
     .position :: Vec3,
@@ -413,6 +421,7 @@ const handle_mmo = (self :: &mut Game) => (
                 .connected = false,
                 .show_timer = true,
                 .particles = ArrayList.new(),
+                .next_fire_particle = 0,
                 .particle_buffer = (
                     let mut data :: ArrayList.t[obj.Vertex] = ArrayList.new();
                     ArrayList.push_back(
@@ -762,6 +771,21 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .update = (self, delta_time) => with_return (
             let delta_time = min(delta_time, 0.050);
+            self^.next_fire_particle -= delta_time;
+            if self^.next_fire_particle < 0 then (
+                self^.next_fire_particle = 1 / 5;
+                for &pos in &FIREPLACES |> ArrayList.iter do (
+                    if Vec3.length(Vec3.sub(pos, self^.player.position)) < 20 then (
+                        const rng = () => std.random.gen_range(.min = -0.5, .max = 0.5);
+                        let particle = {
+                            .position = Vec3.add(pos, { rng(), rng(), rng() }),
+                            .t = 0,
+                            .texture = self^.assets.textures.fire,
+                        };
+                        &mut self^.particles |> ArrayList.push_back(particle);
+                    );
+                );
+            );
             if self^.dead then (
                 self^.dead_timer += delta_time;
                 if self^.dead_timer > 1 then (
