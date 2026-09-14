@@ -8,5 +8,5 @@
 - missing sfxs: rolling
 - particles: fire, water, lava(death), when you drop
 - performance
-- crash
+- fix segfault
 - better interpolation
