@@ -274,11 +274,12 @@ int main(int argc, char *argv[])
                     }
                     break;
                   }
-                  default:
+                  default: {
                     printf("WEIRD STATE DETECTED %d [%d, %d]\n", user->id, user->start, user->end);
                     disconnect(poll, ev[i].socket, ev[i].user_data);
                     looping = 0;
                     break;
+                  }
                 }
               }
               // reset buffer
