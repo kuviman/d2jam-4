@@ -1,8 +1,6 @@
 # Blowing Up
 
 - names
-- credits
-- disconnected warning
 - emotes
 - leaderboard
 - missing sfxs: rolling

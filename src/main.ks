@@ -421,7 +421,7 @@ const handle_mmo = (self :: &mut Game) => (
                         |> Mat4.mul_mat(Mat4.rotate_z(Angle.from_degrees(-90)))
                         |> Mat4.mul_mat(Mat4.translate({ 0, distance, 10}))
                         |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(90)))
-                        |> Mat4.mul_mat(Mat4.scale_uniform(3)),
+                        |> Mat4.mul_mat(Mat4.scale_uniform(4)),
                     .color = { 0, 0, 0, 1 },
                     .align = 0.5,
                 );
