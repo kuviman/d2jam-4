@@ -53,6 +53,16 @@ const Key = newtype (
     | :Backspace
     | :Enter
     | :LeftShift
+    | :Digit1
+    | :Digit2
+    | :Digit3
+    | :Digit4
+    | :Digit5
+    | :Digit6
+    | :Digit7
+    | :Digit8
+    | :Digit9
+    | :Digit0
 );
 
 impl Key as module = (
@@ -93,6 +103,16 @@ impl Key as module = (
         if @native "\(code) == SDL_SCANCODE_LSHIFT" then return :Some :LeftShift;
         if @native "\(code) == SDL_SCANCODE_RETURN" then return :Some :Enter;
         if @native "\(code) == SDL_SCANCODE_BACKSPACE" then return :Some :Backspace;
+        if @native "\(code) == SDL_SCANCODE_0" then return :Some :Digit0;
+        if @native "\(code) == SDL_SCANCODE_1" then return :Some :Digit1;
+        if @native "\(code) == SDL_SCANCODE_2" then return :Some :Digit2;
+        if @native "\(code) == SDL_SCANCODE_3" then return :Some :Digit3;
+        if @native "\(code) == SDL_SCANCODE_4" then return :Some :Digit4;
+        if @native "\(code) == SDL_SCANCODE_5" then return :Some :Digit5;
+        if @native "\(code) == SDL_SCANCODE_6" then return :Some :Digit6;
+        if @native "\(code) == SDL_SCANCODE_7" then return :Some :Digit7;
+        if @native "\(code) == SDL_SCANCODE_8" then return :Some :Digit8;
+        if @native "\(code) == SDL_SCANCODE_9" then return :Some :Digit9;
         :None
     );
 
@@ -123,6 +143,16 @@ impl Key as module = (
         | :X => @native "SDL_SCANCODE_X"
         | :Y => @native "SDL_SCANCODE_Y"
         | :Z => @native "SDL_SCANCODE_Z"
+        | :Digit0 => @native "SDL_SCANCODE_0"
+        | :Digit1 => @native "SDL_SCANCODE_1"
+        | :Digit2 => @native "SDL_SCANCODE_2"
+        | :Digit3 => @native "SDL_SCANCODE_3"
+        | :Digit4 => @native "SDL_SCANCODE_4"
+        | :Digit5 => @native "SDL_SCANCODE_5"
+        | :Digit6 => @native "SDL_SCANCODE_6"
+        | :Digit7 => @native "SDL_SCANCODE_7"
+        | :Digit8 => @native "SDL_SCANCODE_8"
+        | :Digit9 => @native "SDL_SCANCODE_9"
         | :ArrowLeft => @native "SDL_SCANCODE_LEFT"
         | :ArrowRight => @native "SDL_SCANCODE_RIGHT"
         | :ArrowUp => @native "SDL_SCANCODE_UP"

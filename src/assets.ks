@@ -37,6 +37,7 @@ const Assets = (
     };
 
     const Textures = newtype {
+        .emotes :: ArrayList.t[ugli.Texture],
         .fullscreen :: ugli.Texture,
         .mute :: ugli.Texture,
         .muted :: ugli.Texture,
@@ -144,6 +145,18 @@ const Assets = (
                 &mut texture |> ugli.Texture.set_wrap(:Repeat);
                 texture
             ),
+            .emotes = (
+                let mut list = ArrayList.new();
+                let add = path => (
+                    &mut list |> ArrayList.push_back(geng.load_texture(path, :Nearest));
+                );
+                add("assets/sprites/emote/heart.png");
+                add("assets/sprites/emote/lol.png");
+                add("assets/sprites/emote/pog.png");
+                add("assets/sprites/emote/rage.png");
+                add("assets/sprites/emote/kast.png");
+                list
+            ),
         };
 
         let models = {
@@ -169,6 +182,7 @@ const Assets = (
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/togis"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/bu"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/aeron"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/nertsal"));
                 list
             ),
             .level = (

@@ -45,6 +45,19 @@ impl Entity as module = (
     );
 );
 
+const emote = (
+    self :: &mut Game,
+    position :: Vec3,
+    index :: Int32,
+) => (
+    let particle = {
+        .position = Vec3.add(position, { 0, 2, 0 }),
+        .t = 0,
+        .texture = self^.assets.textures.emotes.[index],
+    };
+    &mut self^.particles |> ArrayList.push_back(particle);
+);
+
 const draw_skin = (
     skin :: Int32,
     position :: Vec3,
@@ -735,6 +748,24 @@ const handle_mmo = (self :: &mut Game) => (
                     restart(self);
                 );
             );
+            for p in &mut self^.particles |> ArrayList.iter_mut do (
+                p^.t += delta_time;
+            );
+            const swap = [T] (a :: &mut T, b :: &mut T) => (
+                let t = a^;
+                a^ = b^;
+                b^ = t;
+            );
+            const retain = [T] (a :: &mut ArrayList.t[T], predicate :: &T -> Bool) => (
+                let mut i = 0;
+                while i < ArrayList.length(&a^) do (
+                    if not predicate(&a^.[i]) then (
+                        swap(a |> ArrayList.at_mut(i), a |> ArrayList.at_mut(ArrayList.length(&a^)));
+                    );
+                    i += 1;
+                );
+            );
+            retain(&mut self^.particles, p => p^.t < 1);
             const MUSIC_FADE_TIME = 5;
             geng.audio.Effect.set_volume(
                 self^.assets.music,
@@ -970,6 +1001,21 @@ const handle_mmo = (self :: &mut Game) => (
         ),
         .handle_event = (self, event) => (
             match event with (
+                | :KeyPress :Digit1 => (
+                    emote(self, self^.player.position, 0);
+                )
+                | :KeyPress :Digit2 => (
+                    emote(self, self^.player.position, 1);
+                )
+                | :KeyPress :Digit3 => (
+                    emote(self, self^.player.position, 2);
+                )
+                | :KeyPress :Digit4 => (
+                    emote(self, self^.player.position, 3);
+                )
+                | :KeyPress :Digit5 => (
+                    emote(self, self^.player.position, 4);
+                )
                 | :KeyPress :R => (
                     restart(self);
                 )
