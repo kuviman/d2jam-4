@@ -497,9 +497,7 @@ const handle_mmo = (self :: &mut Game) => (
                 font.Font.draw(
                     &self^.assets.font,
                     "disconnected",
-                    .matrix = Mat4.translate({ 0, 7, 0})
-                        |> Mat4.mul_mat(Mat4.rotate_x(Angle.from_degrees(20)))
-                        |> Mat4.mul_mat(Mat4.scale_uniform(2)),
+                    .matrix = Mat4.translate({ 0, 9.2, 0}),
                     .color = {1, 0, 0, 1},
                     .align = 0.5,
                 );
