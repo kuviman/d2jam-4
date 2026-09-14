@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
                           .index = msg->index,
                         },
                       };
-                      // broadcast((const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
+                      broadcast((const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
                     }
                     break;
                   }
