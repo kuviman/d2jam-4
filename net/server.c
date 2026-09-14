@@ -190,13 +190,13 @@ int main(int argc, char *argv[])
                 continue;
               }
               int looping = 1;
-              while(looping && (user->start <= (user->end + 4))) {
+              while(looping && (user->start + 4) <= user->end) {
                 switch(user->buf[user->start]) {
                   case ClientEmote: {
                     ClientMsgEmote* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgEmote), &looping)) {
                         printf("got emote\n");
-                        printf("Client %d [%d, %d]\n", user->id, user->start, user->end);
+                        printf("Client %llu [%lu, %lu]\n", user->id, user->start, user->end);
                       struct __attribute__((packed)) {
                         ServerMsgTag tag;
                         ServerMsgEmote data;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
                       pdata[user->pidx].data = *msg;
 
                       LOG_DEBUG("Sending world update to %llu\n", user->id);
-                      printf("Client %d [%d, %d]\n", user->id, user->start, user->end);
+                      printf("Client %llu [%lu, %lu]\n", user->id, user->start, user->end);
                       // send a world update to this player
                       for(size_t j = 0; j < MAX_CONNECTIONS; ++j) {
                         if (!pdata[j].is_valid) continue;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
                     break;
                   }
                   default: {
-                    printf("WEIRD STATE DETECTED %d [%d, %d]\n", user->id, user->start, user->end);
+                    printf("WEIRD STATE DETECTED %llu [%lu, %lu]\n", user->id, user->start, user->end);
                     disconnect(poll, ev[i].socket, ev[i].user_data);
                     looping = 0;
                     break;

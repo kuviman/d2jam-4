@@ -166,7 +166,7 @@ void *badcop_poll_msg() {
   if (user.start == user.end) {
     _recv_next();
   }
-  if (user.start <= user.end + 4) {
+  if (user.start + 4 <= user.end) {
     void *msg;
     switch (user.buf[user.start]) {
     case ServerEmote:
