@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
       TcsSocket child_socket = TCS_SOCKET_INVALID;
       if (tcs_accept(listen_socket, &child_socket, NULL) == TCS_SUCCESS) {
         tcs_opt_ip_no_delay_set(child_socket, true);
+        tcs_opt_nonblocking_set(child_socket, true);
         LOG_DEBUG("Accepted client: %lld\n", client_id);
 
         // broadcast to everybody else
