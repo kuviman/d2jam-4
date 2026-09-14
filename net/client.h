@@ -214,6 +214,7 @@ int badcop_init(char *conn_str) {
   } else {
     tcs_poll_remove(tcs_poll, client_socket);
   }
+  user = (UserData){};
   _set_connected(0);
   client_socket = TCS_SOCKET_INVALID;
   if (tcs_lib_init() != TCS_SUCCESS)
