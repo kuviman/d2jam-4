@@ -194,6 +194,7 @@ const Assets = (
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/jerogma"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/temptic"));
                 &mut list |> ArrayList.push_back(Model.load("assets/models/player/trumpet"));
+                &mut list |> ArrayList.push_back(Model.load("assets/models/player/gondo"));
                 list
             ),
             .level = (
