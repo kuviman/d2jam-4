@@ -866,6 +866,18 @@ const handle_mmo = (self :: &mut Game) => (
                     if Vec3.length(Vec3.sub(self^.player.position, scale^.position)) < self^.player.scale + 1 then (
                         geng.audio.play(self^.assets.sfx.collect);
                         scale^.collected = true;
+                        for (_ :: Int32) in 0..10 do (
+                            const rng = () => std.random.gen_range(.min = -1, .max = 1);
+                            let particle = {
+                                .position = Vec3.add(
+                                    scale^.position,
+                                    Vec3.mul(Vec3.normalize({ rng(), rng(), rng() }), 2),
+                                ),
+                                .t = 0.5,
+                                .texture = self^.assets.textures.sparkle,
+                            };
+                            &mut self^.particles |> ArrayList.push_back(particle);
+                        );
                     );
                 );
             );
