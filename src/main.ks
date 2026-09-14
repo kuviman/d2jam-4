@@ -55,6 +55,8 @@ const draw_skin = (
     .jetpack :: Bool,
 ) => (
     let assets = @current Assets.Ctx;
+    let skin = clamp_int(skin, .min = 0, .max = ArrayList.length(&assets.models.skins));
+    let scale = clamp(scale, .min = MIN_SCALE, .max = MAX_SCALE);
     if jetpack then (
         let angle = Angle.from_degrees(1000 * geng.time_since_start());
         Model.draw(

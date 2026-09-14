@@ -56,4 +56,8 @@ const clamp = (x :: Float32, .min :: Float32, .max :: Float32) -> Float32 => (
     if x < min then min else if x > max then max else x
 );
 
+const clamp_int = (x :: Int32, .min :: Int32, .max :: Int32) -> Int32 => (
+    if x < min then min else if x > max then max else x
+);
+
 const math = import "./math.ks";
