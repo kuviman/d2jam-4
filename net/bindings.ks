@@ -29,6 +29,10 @@ const is_connected = () -> Bool => with_return (
     @native "badcop_is_connected()"
 );
 
+const emote = (index :: Int32) => (
+    @native "badcop_emote(\(index))";
+);
+
 const send_update = (u :: PlayerData) => (
     @native ''
         badcop_send_update((ClientMsgUpdate) {
@@ -67,6 +71,10 @@ const ServerMessage = newtype (
         .id :: Id,
         .best_time :: Int32,
         .name :: String,
+    }
+    | :Emote {
+        .id :: Id,
+        .index :: Int32,
     }
 );
 
@@ -123,6 +131,13 @@ const poll_message = () -> Option.t[ServerMessage] => with_return (
             .id = @native "\(data)->id",
             .best_time = @native "\(data)->best_time",
             .name = @native "String_from_C_String(\(data)->name)",
+        };
+    );
+    if @native "\(tag) == ServerEmote" then (
+        let data :: @opaque_type "ServerMsgEmote*" = @native "\(data)";
+        return :Some :Emote {
+            .id = @native "\(data)->id",
+            .index = @native "\(data)->index",
         };
     );
     panic("Unrecognized tag in server message")

@@ -66,6 +66,24 @@ TcsResult badcop_send_update(ClientMsgUpdate update) {
   return res;
 }
 
+TcsResult badcop_emote(int index) {
+  struct __attribute__((packed)) {
+    ClientMsgTag tag;
+    ClientMsgEmote data;
+  } msg = {
+      .tag = ClientEmote,
+      .data = {
+          .index = index,
+      },
+  };
+  TcsResult res = tcs_send(client_socket, (const uint8_t *)&msg, sizeof(msg),
+                           TCS_MSG_SENDALL, NULL);
+  if (res != TCS_SUCCESS) {
+    _set_connected(0);
+  }
+  return res;
+}
+
 TcsResult badcop_set_name(const char *name) {
   struct __attribute__((packed)) {
     ClientMsgTag tag;
@@ -145,6 +163,10 @@ void *badcop_poll_msg() {
   if (user.start <= user.end + 4) {
     void *msg;
     switch (user.buf[user.start]) {
+    case ServerEmote:
+      if (msg = has_full_message(&user, sizeof(ServerMsgEmote), NULL))
+        return msg;
+        break;
     case ServerUpdatePlayer:
       if (msg = has_full_message(&user, sizeof(ServerMsgUpdatePlayer), NULL))
         return msg;

@@ -2,14 +2,21 @@ typedef enum ServerMsgTag {
   ServerUpdatePlayer,
   ServerConnected,
   ServerDisconnected,
-  ServerPlayerMeta
+  ServerPlayerMeta,
+  ServerEmote
 } ServerMsgTag;
 
-typedef enum ClientMsgTag { 
+typedef enum ClientMsgTag {
   ClientUpdate,
   ClientBeatGame,
-  ClientSetName
- } ClientMsgTag;
+  ClientSetName,
+  ClientEmote
+} ClientMsgTag;
+
+typedef struct __attribute__((packed)) {
+  int index;
+  unsigned long long id;
+} ServerMsgEmote;
 
 typedef struct __attribute__((packed)) {
   unsigned long long id;
@@ -43,6 +50,10 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
   unsigned long long duration;
 } ClientMsgBeatGame;
+
+typedef struct __attribute__((packed)) {
+  int index;
+} ClientMsgEmote;
 
 #define MAX_NAME_LEN 27
 typedef struct __attribute__((packed)) {

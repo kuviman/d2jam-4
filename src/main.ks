@@ -50,8 +50,9 @@ const emote = (
     position :: Vec3,
     index :: Int32,
 ) => (
+    let index = clamp_int(index, .min = 0, .max = ArrayList.length(&self^.assets.textures.emotes) - 1);
     let particle = {
-        .position = Vec3.add(position, { 0, 2, 0 }),
+        .position = Vec3.add(position, { 0, 0, 2 }),
         .t = 0,
         .texture = self^.assets.textures.emotes.[index],
     };
@@ -302,6 +303,11 @@ const handle_mmo = (self :: &mut Game) => (
             )
             | :PlayerMeta _ => (
             )
+            | :Emote { .id, .index } => (
+                if &self^.other_players |> OrdMap.get(id) is :Some player then (
+                    emote(self, player^.position.value, index)
+                );
+            )
         )
     );
 
@@ -400,7 +406,7 @@ const handle_mmo = (self :: &mut Game) => (
                     ArrayList.push_back(
                         &mut data,
                         {
-                            .a_pos = { -1, 0, -1 },
+                            .a_pos = { 0, -1, -1 },
                             .a_normal = { 0, 0, 1 },
                             .a_uv = { 0, 0 },
                         },
@@ -408,25 +414,27 @@ const handle_mmo = (self :: &mut Game) => (
                     ArrayList.push_back(
                         &mut data,
                         {
-                            .a_pos = { +1, 0, -1 },
+                            .a_pos = { 0.2, -1, +1 },
                             .a_normal = { 0, 0, 1 },
-                            .a_uv = { 1, 0 },
+                            .a_uv = { 0, 1 },
                         },
                     );
                     ArrayList.push_back(
                         &mut data,
                         {
-                            .a_pos = { +1, 0, +1 },
+                            .a_pos = { 0, +1, +1 },
                             .a_normal = { 0, 0, 1 },
                             .a_uv = { 1, 1 },
                         },
                     );
+                    ArrayList.push_back(&mut data, data.[0]);
+                    ArrayList.push_back(&mut data, data.[2]);
                     ArrayList.push_back(
                         &mut data,
                         {
-                            .a_pos = { -1, 0, +1 },
+                            .a_pos = { 0, +1, -1 },
                             .a_normal = { 0, 0, 1 },
-                            .a_uv = { 0, 1 },
+                            .a_uv = { 1, 0 },
                         },
                     );
                     ugli.VertexBuffer.init(&data)
@@ -760,7 +768,11 @@ const handle_mmo = (self :: &mut Game) => (
                 let mut i = 0;
                 while i < ArrayList.length(&a^) do (
                     if not predicate(&a^.[i]) then (
-                        swap(a |> ArrayList.at_mut(i), a |> ArrayList.at_mut(ArrayList.length(&a^)));
+                        swap(
+                            a |> ArrayList.at_mut(i),
+                            a |> ArrayList.at_mut(ArrayList.length(&a^) - 1),
+                        );
+                        a |> ArrayList.pop_back();
                     );
                     i += 1;
                 );
@@ -1003,18 +1015,23 @@ const handle_mmo = (self :: &mut Game) => (
             match event with (
                 | :KeyPress :Digit1 => (
                     emote(self, self^.player.position, 0);
+                    badcop.emote(0);
                 )
                 | :KeyPress :Digit2 => (
                     emote(self, self^.player.position, 1);
+                    badcop.emote(1);
                 )
                 | :KeyPress :Digit3 => (
                     emote(self, self^.player.position, 2);
+                    badcop.emote(2);
                 )
                 | :KeyPress :Digit4 => (
                     emote(self, self^.player.position, 3);
+                    badcop.emote(3);
                 )
                 | :KeyPress :Digit5 => (
                     emote(self, self^.player.position, 4);
+                    badcop.emote(4);
                 )
                 | :KeyPress :R => (
                     restart(self);

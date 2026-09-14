@@ -191,6 +191,24 @@ int main(int argc, char *argv[])
               int looping = 1;
               while(looping && user->start <= user->end + 4) {
                 switch(user->buf[user->start]) {
+                  case ClientEmote: {
+                    ClientMsgEmote* msg;
+                    if (msg = has_full_message(user, sizeof(ClientMsgEmote), &looping)) {
+                        printf("got emote\n");
+                      struct __attribute__((packed)) {
+                        ServerMsgTag tag;
+                        ServerMsgEmote data;
+                      } server_msg = {
+                        .tag = ServerEmote,
+                        .data = {
+                          .id = user->id,
+                          .index = msg->index,
+                        },
+                      };
+                      broadcast(poll, (const uint8_t*)&server_msg, sizeof(server_msg), pdata[user->pidx].meta.id);
+                    }
+                    break;
+                  }
                   case ClientBeatGame: {
                     ClientMsgBeatGame* msg;
                     if (msg = has_full_message(user, sizeof(ClientMsgBeatGame), &looping)) {

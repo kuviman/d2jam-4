@@ -9,6 +9,11 @@ void handle_message(void *msg) {
     ServerMsgTag tag = *((ServerMsgTag*)msg);
     void *data = (msg + sizeof(ServerMsgTag));
     switch(tag) {
+      case ServerEmote: {
+        ServerMsgEmote *update = (ServerMsgEmote*)data;
+        printf("Player Emote: %llu %d\n", update->id, update->index);
+        break;
+      };
       case ServerUpdatePlayer: {
         ServerMsgUpdatePlayer *update = (ServerMsgUpdatePlayer*)data;
         printf("Player Update: %llu\n", update->id);
@@ -33,7 +38,7 @@ int main(void)
     fcntl (0, F_SETFL, O_NONBLOCK);
     char c = 0;
 
-    badcop_init("198.18.3.212:443");
+    badcop_init("127.0.0.1:1235");
 
     while (main) {
       if (read (0, &c, 1) && c == '\n') {
@@ -43,7 +48,9 @@ int main(void)
           .py = 10.0,
           .pz = -1.0,
         };
-        TcsResult res = badcop_send_update(update);
+        // TcsResult res = badcop_send_update(update);
+        TcsResult res = badcop_emote(123);
+        printf("SENT emote\n");
         if (res != TCS_SUCCESS) {
           return show_error("Failed to send to server");
         }
