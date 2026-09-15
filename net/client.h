@@ -183,7 +183,7 @@ void *badcop_poll_msg() {
   }
   if (user.looping && user.start + 4 <= user.end) {
     void *msg;
-    switch (user.buf[user.start]) {
+    switch (((int *)(user.buf))[user.start]) {
     case ServerEmote:
       if (msg = has_full_message(sizeof(ServerMsgEmote)))
         return msg;

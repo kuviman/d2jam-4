@@ -1,5 +1,5 @@
-server: server.c
-	gcc -g -O0 server.c -o server
+server: server.c interop.h
+	gcc -g -O3 server.c -o server
 
-client: testclient.c
+client: testclient.c client.h interop.h
 	gcc testclient.c -o client
